@@ -47,5 +47,12 @@ stickers.html       — Sticker Scene (drag emoji stickers onto beach/space/mead
 colormatch.html     — Color Match! (tap the circle matching a colored shape, 8 colors, 6 shapes)
 paint.html          — Paint! (finger painting canvas, 18 colors, 3 brush sizes, rainbow brush, undo)
 soccer.html         — Tap to Shoot! (tap to kick at goal, goalie dives, GOAL! celebration + confetti)
+hideseek.html       — Hide & Seek Bear! (bear hides in scene, tap spots to find, wrong spots reveal funny animals)
+plinko.html         — Plinko! (drop marble through rainbow pegs, bouncy cups, physics sounds, JACKPOT celebration)
+puppy.html          — Wash the Puppy! (drag sponge to scrub mud off SVG puppy, bubbles, water spray, tail wag on win)
+feed-the-dragon-sparkles.html — Feed the Dragon! (2-player dice game, roll and feed candies to the dragon, triggers ACHOO sneeze at 20 candies)
+rainbow-archery.html       — Rainbow Archery! (drag to aim and shoot arrows at a moving target, 5 arrows per round, confetti on hit)
+candy-rescue.html         — Candy Rescue! (Space Invaders-style, shoot candy 🍬 at 4×3 animal grid, waves auto-advance, score tracked)
+rainbow-brick-burst.html  — Rainbow Brick Burst! (Breakout/Arkanoid-style, 🪄 wand paddle, sparkle ball, 8×5 pastel brick grid, no fail state — ball respawns, score/level carry over)
 CLAUDE.md           — this file
 ```
