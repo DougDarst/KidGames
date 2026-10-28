@@ -57,6 +57,8 @@ index.html          — game picker / home screen
 shared/kit.css      — shared styles (see "Shared kit")
 shared/kit.js       — shared helpers (see "Shared kit")
 scripts/bump-kit.js — `npm run bump-kit`: bump the kit's ?v= cache-buster everywhere
+scripts/screenshots.js — `npm run screenshots`: retake README screenshots (docs/screenshots/)
+README.md           — GitHub front page; update its game table when adding a game
 matching.html       — Emoji Match (2-player memory game)
 tictactoe_v2.html   — Tic-Tac-Toe (Unicorn vs Dragon)
 simon.html          — Simon Says
