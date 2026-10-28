@@ -13,7 +13,7 @@ Each game must be self-contained in a single `.html` file — all CSS and JavaSc
 
 ## Tests
 
-Playwright (Chromium) — `npm install` once, `npx playwright install chromium`, then `npm test`. CI runs them on every push (`.github/workflows/test.yml`).
+Playwright, on iPhone WebKit (what iPhone Chrome actually uses) and Chromium — `npm install` once, `npx playwright install chromium webkit`, then `npm test`. CI runs them on every push (`.github/workflows/test.yml`).
 
 - `tests/conventions.spec.js` — static checks for the rules in this file, plus `index.html` link integrity.
 - `tests/smoke.spec.js` — loads every game linked from `index.html`, taps/drags, fails on any JS error.
