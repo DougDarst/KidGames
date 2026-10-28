@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>⚽ Tap to Shoot!</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         html, body { height:100%; height:100dvh; overflow:hidden; background:#0d3b1a; }
 
         #canvas { position:fixed; inset:0; width:100%; height:100%; touch-action:none; display:block; }
@@ -72,14 +72,6 @@
         }
         #flash.on { opacity:0.5; }
 
-        /* Confetti */
-        .cw { position:fixed; inset:0; pointer-events:none; z-index:55; overflow:hidden; }
-        .cp { position:absolute; top:-14px; animation:fall var(--fd) ease-in var(--del) forwards; }
-        @keyframes fall {
-            0%  { transform:translateY(0) rotate(0deg); opacity:1; }
-            100%{ transform:translateY(110vh) rotate(700deg); opacity:0; }
-        }
-
         /* Tap hint */
         #tapHint {
             position:fixed; bottom:52px; left:0; right:0;
@@ -107,15 +99,11 @@
 </div>
 <div id="saveWord"></div>
 <div id="flash"></div>
-<div class="cw" id="confetti"></div>
+<div class="confetti-wrap" id="confetti"></div>
 <div id="tapHint">TAP anywhere to shoot! ⚽</div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 /* ══════════════════════════════════════════
    ALL variable declarations first — avoids
    temporal dead zone bugs.
@@ -150,9 +138,6 @@ let bp  = 0, brot = 0;       // flight progress, spin
 // Effects
 let particles  = [];
 let netRipple  = null;
-
-// Audio context (lazy)
-let actx = null;
 
 /* ══════════════════════════════════════════
    INIT — call after all declarations
@@ -205,11 +190,10 @@ function buildCrowd() {
 /* ══════════════════════════════════════════
    AUDIO
 ══════════════════════════════════════════ */
-function ac() { return actx || (actx = new (window.AudioContext || window.webkitAudioContext)()); }
 
 function playKick() {
     try {
-        const a = ac(), o = a.createOscillator(), g = a.createGain();
+        const a = Kit.audio(), o = a.createOscillator(), g = a.createGain();
         o.connect(g); g.connect(a.destination);
         o.frequency.setValueAtTime(90, a.currentTime);
         o.frequency.exponentialRampToValueAtTime(25, a.currentTime + 0.18);
@@ -221,7 +205,7 @@ function playKick() {
 
 function playGoalSnd() {
     try {
-        const a = ac();
+        const a = Kit.audio();
         [[0, 330, 440],[0.22, 440, 550],[0.44, 550, 880]].forEach(([d, f1, f2]) => {
             const o = a.createOscillator(), g = a.createGain();
             o.type = 'sawtooth'; o.connect(g); g.connect(a.destination);
@@ -231,7 +215,7 @@ function playGoalSnd() {
             g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + d + 0.4);
             o.start(a.currentTime + d); o.stop(a.currentTime + d + 0.4);
         });
-        const a2 = ac(), buf = a2.createBuffer(1, a2.sampleRate * 1.2, a2.sampleRate);
+        const a2 = Kit.audio(), buf = a2.createBuffer(1, a2.sampleRate * 1.2, a2.sampleRate);
         const d  = buf.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/d.length,0.3)*0.3;
         const src = a2.createBufferSource(), f = a2.createBiquadFilter();
@@ -242,7 +226,7 @@ function playGoalSnd() {
 
 function playSaveSnd() {
     try {
-        const a = ac(), o = a.createOscillator(), g = a.createGain();
+        const a = Kit.audio(), o = a.createOscillator(), g = a.createGain();
         o.type = 'sine'; o.connect(g); g.connect(a.destination);
         o.frequency.setValueAtTime(700, a.currentTime);
         o.frequency.linearRampToValueAtTime(450, a.currentTime + 0.28);
@@ -511,7 +495,7 @@ function onGoal() {
     document.getElementById('flash').classList.add('on');
     setTimeout(() => document.getElementById('flash').classList.remove('on'), 180);
 
-    launchConfetti(100);
+    Kit.confetti(100);
     playGoalSnd();
     netRipple = { x: btx, y: bty, r: 6, a: 0.9 };
 }
@@ -522,25 +506,6 @@ function onSave() {
     w.classList.add('show');
     playSaveSnd();
     setTimeout(() => w.classList.remove('show'), 1200);
-}
-
-function launchConfetti(n) {
-    const wrap = document.getElementById('confetti');
-    wrap.innerHTML = '';
-    const cols = ['#ffd700','#ff6bbd','#a855f7','#38bdf8','#34d399','#fb923c','#f43f5e','#fff'];
-    for (let i = 0; i < n; i++) {
-        const el = document.createElement('div');
-        el.className = 'cp';
-        const w = Math.random()*10+5, h2 = Math.random()*10+5;
-        el.style.cssText =
-            `left:${(Math.random()*100).toFixed(1)}%;` +
-            `width:${w.toFixed(1)}px;height:${h2.toFixed(1)}px;` +
-            `background:${cols[i%cols.length]};` +
-            `border-radius:${Math.random()>.5?'50%':'2px'};` +
-            `--fd:${(Math.random()*2+1.4).toFixed(2)}s;` +
-            `--del:${(Math.random()*0.5).toFixed(2)}s`;
-        wrap.appendChild(el);
-    }
 }
 
 function doReset() {

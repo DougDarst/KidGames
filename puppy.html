@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wash the Puppy!</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         html, body { height:100%; height:100dvh; overflow:hidden;
             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
         body { display:flex; flex-direction:column; }
@@ -17,12 +17,6 @@
             background:linear-gradient(135deg,#1a0040,#2d0060);
             border-bottom:2px solid rgba(255,255,255,0.10);
         }
-        .back-btn {
-            background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.2);
-            color:#fff; border-radius:50px; padding:8px 13px; font-size:0.8rem;
-            font-weight:700; text-decoration:none; white-space:nowrap; flex-shrink:0;
-        }
-        .back-btn:active { background:rgba(255,255,255,0.25); }
         h1 { flex:1; text-align:center; font-size:1.25rem; font-weight:900; color:#fff;
              text-shadow:0 0 20px rgba(255,200,80,0.9); }
         #hint-top { flex-shrink:0; font-size:0.8rem; font-weight:700;
@@ -136,14 +130,6 @@
             box-shadow:0 4px 20px rgba(0,100,255,0.35);
         }
         .wash-btn:active { filter:brightness(1.15); }
-
-        /* ── Confetti ── */
-        .cw { position:fixed; inset:0; pointer-events:none; z-index:150; overflow:hidden; }
-        .cp { position:absolute; top:-14px; animation:fall var(--fd) ease-in var(--del) forwards; }
-        @keyframes fall {
-            0%  {transform:translateY(0) rotate(0); opacity:1}
-            100%{transform:translateY(115vh) rotate(720deg); opacity:0}
-        }
     </style>
 </head>
 <body>
@@ -267,14 +253,10 @@
 </div>
 
 <!-- Confetti -->
-<div class="cw" id="confetti"></div>
+<div class="confetti-wrap" id="confetti"></div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 /* ════════════════════════════════
    ALL DECLARATIONS FIRST — no TDZ
 ════════════════════════════════ */
@@ -306,12 +288,10 @@ const WAG_PIV_Y  = 268;
 /* ════════════════
    AUDIO
 ════════════════ */
-let _ac = null;
-function getAC() { return _ac || (_ac = new (window.AudioContext || window.webkitAudioContext)()); }
 
 function playScrubSound() {
     try {
-        const a = getAC();
+        const a = Kit.audio();
         const buf = a.createBuffer(1, a.sampleRate * 0.06, a.sampleRate);
         const d   = buf.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.06;
@@ -329,7 +309,7 @@ function playScrubSound() {
 
 function playWaterSound() {
     try {
-        const a = getAC();
+        const a = Kit.audio();
         const buf = a.createBuffer(1, a.sampleRate * 0.9, a.sampleRate);
         const d   = buf.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.18;
@@ -348,7 +328,7 @@ function playWaterSound() {
 
 function playWinChord() {
     try {
-        const a = getAC();
+        const a = Kit.audio();
         [523, 659, 784, 1047, 1319].forEach((f, i) => {
             const o = a.createOscillator(), g = a.createGain();
             o.type = 'sine'; o.frequency.value = f;
@@ -534,7 +514,7 @@ function onWin() {
     setTimeout(() => {
         winEl.classList.add('show');
         playWinChord();
-        launchConfetti(90);
+        Kit.confetti(90);
     }, 900);
 }
 
@@ -575,24 +555,6 @@ function startWag() {
 /* ════════════════
    CONFETTI
 ════════════════ */
-function launchConfetti(n) {
-    const wrap = document.getElementById('confetti');
-    wrap.innerHTML = '';
-    const cols = ['#ffd700','#ff6bbd','#a855f7','#38bdf8','#34d399','#fb923c','#f43f5e'];
-    for (let i = 0; i < n; i++) {
-        const el = document.createElement('div');
-        el.className = 'cp';
-        const w = (4 + Math.random() * 10).toFixed(1);
-        el.style.cssText =
-            `left:${(Math.random()*100).toFixed(1)}%;` +
-            `width:${w}px;height:${w}px;` +
-            `background:${cols[i % cols.length]};` +
-            `border-radius:${Math.random() > 0.5 ? '50%' : '3px'};` +
-            `--fd:${(1.5 + Math.random() * 2.2).toFixed(2)}s;` +
-            `--del:${(Math.random() * 0.55).toFixed(2)}s`;
-        wrap.appendChild(el);
-    }
-}
 
 /* ════════════════
    RESTART

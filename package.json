@@ -3,7 +3,8 @@
   "private": true,
   "description": "Touch-friendly browser games for Ellie and Grandpa",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "bump-kit": "node scripts/bump-kit.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Candy Rescue</title>
+<link rel="stylesheet" href="shared/kit.css?v=1">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     height: 100%; overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Rounded, sans-serif;
@@ -19,21 +19,6 @@
     animation: bgShift 12s ease infinite;
     display: flex; flex-direction: column;
   }
-  @keyframes bgShift {
-    0%,100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .star {
-    position: absolute; width: 2px; height: 2px;
-    background: #fff; border-radius: 50%;
-    animation: twinkle 2s infinite alternate;
-  }
-  @keyframes twinkle {
-    from { opacity: 0.15; }
-    to { opacity: 0.9; }
-  }
 
   .top-bar {
     width: 100%;
@@ -41,13 +26,7 @@
     padding: 8px 16px 4px;
     z-index: 1; flex-shrink: 0;
   }
-  .back-btn {
-    color: rgba(255,255,255,0.75);
-    text-decoration: none; font-size: 15px;
-    padding: 6px 14px; border-radius: 50px;
-    background: rgba(255,255,255,0.1);
-    white-space: nowrap; min-width: 80px; text-align: center;
-  }
+  .back-btn { min-width: 80px; text-align: center; }
   .top-bar h1 {
     font-size: clamp(16px, 4vw, 22px);
     font-weight: 700; text-align: center; flex: 1;
@@ -158,43 +137,10 @@
   }
   .shoot-btn:active { opacity: 0.85; }
   .hint-text { display: none; }
-
-  /* Overlay */
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(5,0,20,0.80);
-    backdrop-filter: blur(6px);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 100;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s;
-  }
-  .overlay.show { opacity: 1; pointer-events: all; }
-  .result-card {
-    background: linear-gradient(135deg, #1a0040, #2d0060);
-    border: 2px solid #ffd700;
-    border-radius: 24px; padding: 40px 32px; text-align: center;
-    max-width: 88vw;
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-  }
+  .result-card { display: flex; flex-direction: column; align-items: center; gap: 14px; }
   .result-emoji { font-size: 54px; }
-  .result-title { font-size: clamp(22px,5vw,30px); font-weight: 700; color: #ffd700; }
-  .result-msg { font-size: 16px; opacity: 0.85; }
-  .play-again-btn {
-    margin-top: 6px;
-    font-size: 18px; font-weight: 700; font-family: inherit;
-    padding: 14px 34px;
-    background: linear-gradient(135deg, #ffd700, #ff8c00);
-    color: #1a0040; border: none; border-radius: 50px;
-    cursor: pointer;
-  }
-
-  /* Confetti */
-  .confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 200; }
-  .cp { position: absolute; top: -20px; border-radius: 3px; animation: fall linear forwards; }
-  @keyframes fall {
-    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-  }
+  .result-msg { opacity: 0.85; }
+  .play-again-btn { margin-top: 6px; font-family: inherit; }
 </style>
 </head>
 <body>
@@ -241,22 +187,10 @@
   </div>
 </div>
 
-<div class="confetti-wrap" id="confettiWrap"></div>
+<div class="confetti-wrap" id="confetti"></div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-  const starsDiv = document.getElementById('stars');
-  for (let i = 0; i < 70; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()*2}s`;
-    starsDiv.appendChild(s);
-  }
-
   const ANIMAL_EMOJIS = ['🐰','🐼','🦊','🐸','🐵','🐨'];
   const COLS = 4;
   let ROWS = 3, CELL = 68;
@@ -273,7 +207,6 @@
   const leftBtn = document.getElementById('leftBtn');
   const rightBtn = document.getElementById('rightBtn');
   const shootBtn = document.getElementById('shootBtn');
-  const confettiWrap = document.getElementById('confettiWrap');
 
   let stageW, stageH, girlY;
   let girlX;
@@ -314,37 +247,10 @@
     girl.style.bottom = (stageH - girlY) + 'px';
   }
 
-  let audioCtx;
-  function tone(freq, dur, type='sine', vol=0.14) {
-    try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = type; o.frequency.value = freq; g.gain.value = vol;
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start();
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-      o.stop(audioCtx.currentTime + dur);
-    } catch(e) {}
-  }
-  const shootTone = () => tone(500 + Math.random()*100, 0.08, 'triangle', 0.1);
-  const popTone = () => { tone(700,0.08); setTimeout(()=>tone(950,0.1),60); };
-  const bounceTone = () => tone(300, 0.1, 'square', 0.06);
-  const waveTone = () => { tone(523,0.1); setTimeout(()=>tone(659,0.1),100); setTimeout(()=>tone(784,0.14),200); setTimeout(()=>tone(1046,0.2),320); };
-
-  function launchConfetti(count=30) {
-    const colors = ['#ff6fa0','#ffd166','#6ee7b7','#4cc9f0','#a78bfa','#ffd700','#ff9a5c'];
-    for (let i = 0; i < count; i++) {
-      const p = document.createElement('div');
-      p.className = 'cp';
-      const size = 6 + Math.random() * 8;
-      const dur = 1.0 + Math.random() * 1.0;
-      const delay = Math.random() * 0.4;
-      p.style.cssText = `width:${size}px;height:${size}px;background:${colors[i%colors.length]};left:${Math.random()*100}vw;animation-duration:${dur}s;animation-delay:${delay}s`;
-      confettiWrap.appendChild(p);
-      setTimeout(() => p.remove(), (dur + delay + 0.3) * 1000);
-    }
-  }
+  const shootTone = () => Kit.tone(500 + Math.random()*100, 0.08, 'triangle', 0.1);
+  const popTone = () => { Kit.tone(700,0.08); setTimeout(()=>Kit.tone(950,0.1),60); };
+  const bounceTone = () => Kit.tone(300, 0.1, 'square', 0.06);
+  const waveTone = () => { Kit.tone(523,0.1); setTimeout(()=>Kit.tone(659,0.1),100); setTimeout(()=>Kit.tone(784,0.14),200); setTimeout(()=>Kit.tone(1046,0.2),320); };
 
   function buildWave() {
     animals.forEach(a => a.el && a.el.remove());
@@ -500,7 +406,7 @@
     a.alive = false;
     popTone();
     a.el.classList.add('pop');
-    launchConfetti(18);
+    Kit.confetti(18);
     score++;
     scorePill.textContent = '🌟 ' + score;
     setTimeout(() => a.el.remove(), 350);
@@ -519,7 +425,7 @@
   function waveComplete() {
     paused = true;
     waveTone();
-    launchConfetti(60);
+    Kit.confetti(60);
     document.getElementById('overEmoji').textContent = '🎉';
     document.getElementById('overHeadline').textContent = 'Wave ' + wave + ' Cleared!';
     document.getElementById('overSub').textContent = 'Get ready for Wave ' + (wave + 1) + '!';
@@ -535,8 +441,8 @@
 
   function showGameOver() {
     paused = true;
-    tone(300, 0.2, 'sawtooth', 0.12);
-    setTimeout(() => tone(220, 0.3, 'sawtooth', 0.1), 200);
+    Kit.tone(300, 0.2, 'sawtooth', 0.12);
+    setTimeout(() => Kit.tone(220, 0.3, 'sawtooth', 0.1), 200);
     document.getElementById('overEmoji').textContent = '😱';
     document.getElementById('overHeadline').textContent = 'Oh no!';
     document.getElementById('overSub').textContent = 'The animals reached the ground! Score: 🌟 ' + score;

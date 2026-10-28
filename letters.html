@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🔤 First Letter — Ellie & Grandpa</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
         body {
             min-height:100vh; min-height:100dvh;
             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Rounded,sans-serif;
@@ -16,18 +15,6 @@
             display:flex; flex-direction:column; align-items:center;
             padding:14px 14px 20px; overflow-x:hidden; color:white;
         }
-        @keyframes bgShift {
-            0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%}
-        }
-
-        .stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
-        .star {
-            position:absolute; background:white; border-radius:50%;
-            animation:twinkle var(--d) ease-in-out infinite var(--delay); opacity:0;
-        }
-        @keyframes twinkle {
-            0%,100%{opacity:0;transform:scale(0.4)} 50%{opacity:0.9;transform:scale(1)}
-        }
 
         .game {
             position:relative; z-index:1; width:100%; max-width:420px;
@@ -36,18 +23,10 @@
 
         /* ── Top bar ── */
         .top-bar { width:100%; display:flex; align-items:center; gap:10px; }
-        .back-btn {
-            background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.2);
-            color:white; border-radius:50px; padding:8px 14px; font-size:0.82rem;
-            font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;
-            text-decoration:none; transition:background 0.2s; letter-spacing:0.5px;
-        }
-        .back-btn:active { background:rgba(255,255,255,0.22); }
         h1 {
             flex:1; text-align:center; font-size:1.35rem; font-weight:900;
             text-shadow:0 0 20px rgba(255,200,80,0.8); letter-spacing:1px;
         }
-        .top-spacer { flex-shrink:0; width:74px; }
 
         /* ── Stats ── */
         .stats-row { display:flex; gap:10px; width:100%; }
@@ -147,14 +126,6 @@
             background:rgba(255,215,0,0.12); border-color:rgba(255,215,0,0.4);
             color:rgba(255,215,0,0.9);
         }
-
-        /* ── Confetti ── */
-        .confetti-wrap { position:fixed; inset:0; pointer-events:none; z-index:99; overflow:hidden; }
-        .cp { position:absolute; top:-14px; animation:fall var(--fd) ease-in var(--del) forwards; }
-        @keyframes fall {
-            0%{transform:translateY(0) rotate(0deg);opacity:1}
-            100%{transform:translateY(110vh) rotate(720deg);opacity:0}
-        }
     </style>
 </head>
 <body>
@@ -193,22 +164,8 @@
     <button class="hint-btn" id="hintBtn" onclick="showHint()">💡 Need a hint?</button>
 </div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-/* ── Stars ── */
-const starsEl = document.getElementById('stars');
-for (let i = 0; i < 70; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const sz = (Math.random() * 2.5 + 0.8).toFixed(1);
-    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--delay:-${(Math.random()*5).toFixed(1)}s`;
-    starsEl.appendChild(s);
-}
-
 /* ── Emoji data ── */
 const EMOJIS = [
     { e:'🍎', name:'Apple',    letter:'A' },
@@ -258,18 +215,9 @@ let locked  = false;
 let current = null;
 
 /* ── Utilities ── */
-function shuffle(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
-
 function buildChoices(correct) {
-    const wrongs = shuffle(ALL_LETTERS.filter(l => l !== correct)).slice(0, 3);
-    return shuffle([correct, ...wrongs]);
+    const wrongs = Kit.shuffle(ALL_LETTERS.filter(l => l !== correct)).slice(0, 3);
+    return Kit.shuffle([correct, ...wrongs]);
 }
 
 /* ── Render ── */
@@ -280,7 +228,7 @@ const hintBtn      = document.getElementById('hintBtn');
 
 function showEmoji() {
     if (poolIdx >= pool.length) {
-        pool    = shuffle(EMOJIS);
+        pool    = Kit.shuffle(EMOJIS);
         poolIdx = 0;
     }
     current = pool[poolIdx];
@@ -330,7 +278,7 @@ function onTap(btn, letter) {
         hintBtn.textContent = '';
 
         letterGrid.querySelectorAll('.letter-btn').forEach(b => { b.disabled = true; });
-        miniConfetti();
+        Kit.confetti();
         setTimeout(() => { poolIdx++; showEmoji(); }, 1600);
 
     } else {
@@ -361,24 +309,8 @@ function bump(id) {
     el.classList.add('bump');
 }
 
-/* ── Mini confetti ── */
-function miniConfetti() {
-    const wrap   = document.getElementById('confetti');
-    wrap.innerHTML = '';
-    const colors = ['#ffd700','#ff6bbd','#a855f7','#38bdf8','#34d399','#fb923c'];
-    for (let i = 0; i < 36; i++) {
-        const p  = document.createElement('div');
-        p.className = 'cp';
-        const w  = Math.random() * 9 + 5;
-        const h  = Math.random() * 9 + 5;
-        const br = Math.random() > 0.5 ? '50%' : '2px';
-        p.style.cssText = `left:${Math.random()*100}%;width:${w}px;height:${h}px;background:${colors[i%colors.length]};border-radius:${br};--fd:${(Math.random()*1+0.8).toFixed(2)}s;--del:${(Math.random()*.25).toFixed(2)}s`;
-        wrap.appendChild(p);
-    }
-}
-
 /* ── Start ── */
-pool = shuffle(EMOJIS);
+pool = Kit.shuffle(EMOJIS);
 showEmoji();
 </script>
 </body>

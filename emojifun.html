@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🐶 Emoji Fun — Ellie &amp; Grandpa</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
         html, body { height:100%; height:100dvh; overflow:hidden; }
 
         body {
@@ -17,36 +16,16 @@
             display:flex; flex-direction:column;
             color:white;
         }
-        @keyframes bgShift {
-            0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%}
-        }
-
-        .stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
-        .star {
-            position:absolute; background:white; border-radius:50%;
-            animation:twinkle var(--d) ease-in-out infinite var(--delay); opacity:0;
-        }
-        @keyframes twinkle {
-            0%,100%{opacity:0;transform:scale(0.4)} 50%{opacity:0.9;transform:scale(1)}
-        }
 
         /* ── Top bar ── */
         .top-bar {
             position:relative; z-index:2; flex-shrink:0;
             display:flex; align-items:center; padding:14px 14px 8px; gap:10px;
         }
-        .back-btn {
-            background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.2);
-            color:white; border-radius:50px; padding:8px 14px; font-size:0.82rem;
-            font-weight:700; white-space:nowrap; flex-shrink:0;
-            text-decoration:none; letter-spacing:0.5px;
-        }
-        .back-btn:active { background:rgba(255,255,255,0.22); }
         h1 {
             flex:1; text-align:center; font-size:1.4rem; font-weight:900;
             text-shadow:0 0 20px rgba(255,200,80,0.8); letter-spacing:1px;
         }
-        .top-spacer { flex-shrink:0; width:74px; }
 
         /* ── Play area ── */
         .play-area {
@@ -108,12 +87,8 @@
     </div>
 </div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 const ANIMALS = [
     '🐶','🐱','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸',
     '🐰','🦊','🐭','🐹','🐙','🦋','🐢','🐦','🦆','🐧',
@@ -122,19 +97,6 @@ const ANIMALS = [
 ];
 
 /* Stars */
-const starsEl = document.getElementById('stars');
-for (let i = 0; i < 70; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const sz = (Math.random() * 2.5 + 0.8).toFixed(1);
-    s.style.cssText =
-        'width:' + sz + 'px;height:' + sz + 'px;' +
-        'left:' + (Math.random()*100).toFixed(2) + '%;' +
-        'top:'  + (Math.random()*100).toFixed(2) + '%;' +
-        '--d:'  + (Math.random()*3+2).toFixed(1) + 's;' +
-        '--delay:-' + (Math.random()*5).toFixed(1) + 's';
-    starsEl.appendChild(s);
-}
 
 const area = document.getElementById('playArea');
 const hint = document.getElementById('hint');

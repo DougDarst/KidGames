@@ -4,14 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🦄 Ellie's Games 🌈</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         body {
             min-height: 100vh;
             min-height: 100dvh;
@@ -528,12 +522,8 @@
 
 </div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
     /* Floating background emojis */
     const symbols = ['🦄','🌈','⭐','🌸','💫','🦋','✨','🍭','🌟','💖','🎀','🌺'];
     const wrap = document.getElementById('floaters');

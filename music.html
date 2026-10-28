@@ -4,14 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🎵 Music Bars — Ellie & Grandpa</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         body {
             width: 100vw;
             height: 100vh;
@@ -22,26 +16,6 @@
             animation: bgShift 12s ease infinite;
             overflow: hidden;
             color: white;
-        }
-
-        @keyframes bgShift {
-            0%   { background-position: 0% 50%; }
-            50%  { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* ── Stars ── */
-        .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle var(--d) ease-in-out infinite var(--delay);
-            opacity: 0;
-        }
-        @keyframes twinkle {
-            0%, 100% { opacity: 0;   transform: scale(0.4); }
-            50%       { opacity: 0.9; transform: scale(1);   }
         }
 
         /* ── Portrait: rotate prompt ── */
@@ -95,22 +69,6 @@
             padding: 8px 14px 4px;
             flex-shrink: 0;
         }
-        .back-btn {
-            background: rgba(255,255,255,0.12);
-            border: 1.5px solid rgba(255,255,255,0.2);
-            color: white;
-            border-radius: 50px;
-            padding: 7px 14px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            flex-shrink: 0;
-            text-decoration: none;
-            letter-spacing: 0.5px;
-            transition: background 0.2s;
-        }
-        .back-btn:active { background: rgba(255,255,255,0.22); }
         .top-title {
             flex: 1;
             text-align: center;
@@ -120,7 +78,6 @@
             letter-spacing: 1px;
             white-space: nowrap;
         }
-        .top-spacer { flex-shrink: 0; width: 74px; }
 
         /* ── Bars area ── */
         .bars-area {
@@ -252,22 +209,8 @@
     <div class="bars-area" id="barsArea"></div>
 </div>
 
+<script src="shared/kit.js?v=1"></script>
 <script>
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-    /* ── Stars ── */
-    const starsEl = document.getElementById('stars');
-    for (let i = 0; i < 55; i++) {
-        const s  = document.createElement('div');
-        s.className = 'star';
-        const sz = (Math.random() * 2.5 + 0.8).toFixed(1);
-        s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--delay:-${(Math.random()*5).toFixed(1)}s`;
-        starsEl.appendChild(s);
-    }
-
     /* ── Note data ── */
     //  color is the bar background; each animal was chosen to match the color
     const NOTES = [
@@ -279,18 +222,8 @@
     ];
 
     /* ── Web Audio ── */
-    let audioCtx = null;
-
-    function getCtx() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        return audioCtx;
-    }
-
     function playNote(freq) {
-        const ctx = getCtx();
+        const ctx = Kit.audio();
         const now = ctx.currentTime;
 
         // layer 3 sine partials for a warm, bell-like xylophone tone
