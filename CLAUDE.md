@@ -9,6 +9,15 @@ Each game must be self-contained in a single `.html` file — all CSS and JavaSc
 1. Create a new `.html` file for the game (e.g. `mygame.html`). All styles and scripts go inside that file.
 2. Follow the UI patterns from `matching.html` (see below).
 3. Add the game to `index.html` — copy an existing `<a class="game-card">` block, update the `href`, colors (`--c1`/`--c2`), icon, name, and description.
+4. Run `npm test`. New games are picked up automatically by the convention and smoke tests; add rule tests to `tests/logic.spec.js` if the game has logic worth checking.
+
+## Tests
+
+Playwright (Chromium) — `npm install` once, `npx playwright install chromium`, then `npm test`. CI runs them on every push (`.github/workflows/test.yml`).
+
+- `tests/conventions.spec.js` — static checks for the rules in this file, plus `index.html` link integrity.
+- `tests/smoke.spec.js` — loads every game linked from `index.html`, taps/drags, fails on any JS error.
+- `tests/logic.spec.js` — game rules, tested by calling each page's top-level functions via `page.evaluate`. Don't rename those functions/variables without updating the tests.
 
 ## UI patterns (from matching.html)
 
@@ -37,6 +46,7 @@ balloons.html       — Pop Balloons
 dots.html           — Dot Art (connect the dots)
 letters.html        — First Letter (emoji alphabet game)
 puzzle.html         — Unicorn Puzzle (3×3 sliding tile puzzle)
+counting.html       — Count It! (count the emojis, pick the number 1–10)
 addition.html       — Add It Up! (addition, sums up to 10)
 pong.html           — Pong! (2-player, top/bottom paddles, landscape recommended)
 mole.html           — Whack-a-Mole (tap moles before they hide, 60-second timer)
@@ -54,5 +64,7 @@ feed-the-dragon-sparkles.html — Feed the Dragon! (2-player dice game, roll and
 rainbow-archery.html       — Rainbow Archery! (drag to aim and shoot arrows at a moving target, 5 arrows per round, confetti on hit)
 candy-rescue.html         — Candy Rescue! (Space Invaders-style, shoot candy 🍬 at 4×3 animal grid, waves auto-advance, score tracked)
 rainbow-brick-burst.html  — Rainbow Brick Burst! (Breakout/Arkanoid-style, 🪄 wand paddle, sparkle ball, 8×5 pastel brick grid, no fail state — ball respawns, score/level carry over)
+connect-four.html, road-racer.html, whack-a-mole.html — older games, not linked from index.html
+tests/              — Playwright tests
 CLAUDE.md           — this file
 ```
