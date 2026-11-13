@@ -87,6 +87,7 @@ candy-rescue.html         — Candy Rescue! (Space Invaders-style, shoot candy �
 rainbow-brick-burst.html  — Rainbow Brick Burst! (Breakout/Arkanoid-style, 🪄 wand paddle, sparkle ball, 8×5 pastel brick grid, no fail state — ball respawns, score/level carry over)
 hangman.html          — Hangman! (guess letters of a picture-hinted word, 10 misses draw head→frown, confetti on win)
 snowman.html          — Build a Snowman! (drag middle ball, then head, then hat/eyes/nose/2 arms onto the base; smile + confetti when done, for toddlers)
+christmastree.html    — Decorate the Tree! (free play: drag ornaments/bulbs onto the tree, star snaps to top + celebrates, presents snap to ground, lights switch twinkles bulbs, two-tap Clear)
 connect-four.html, road-racer.html, whack-a-mole.html — older games, not linked from index.html
 tests/              — Playwright tests
 CLAUDE.md           — this file

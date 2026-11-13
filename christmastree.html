@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎄 Decorate the Tree — Ellie & Grandpa</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
+    <style>
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Rounded, sans-serif;
+            background: linear-gradient(135deg, #1a0040, #0a1560, #2d0060, #0a1560, #1a0040);
+            background-size: 400% 400%;
+            animation: bgShift 12s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 14px 20px;
+            overflow-x: hidden;
+            color: white;
+            touch-action: none;
+        }
+
+        /* ── Layout ── */
+        .game {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ── Top bar: back + title ── */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 {
+            flex: 1;
+            text-align: center;
+            font-size: 1.45rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255,200,80,0.8);
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* ── Winter scene ── */
+        .scene {
+            position: relative;
+            width: 100%;
+            height: clamp(240px, calc(100dvh - 340px), 480px);
+            border-radius: 24px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0d1b4a 0%, #1f3a75 65%, #3b5d99 100%);
+            border: 2px solid rgba(255,255,255,0.15);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+        }
+        .ground {
+            position: absolute;
+            left: -10%;
+            right: -10%;
+            bottom: -30px;
+            height: calc(15% + 30px);
+            background: linear-gradient(180deg, #ffffff, #dbe9f8);
+            border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+        }
+        .moon { position: absolute; top: 5%; right: 6%; font-size: 1.8rem; line-height: 1; pointer-events: none; }
+
+        .flakes { position: absolute; inset: 0; pointer-events: none; }
+        .flake {
+            position: absolute;
+            top: -10px;
+            border-radius: 50%;
+            background: white;
+            opacity: 0.85;
+            animation: snowfall var(--t) linear var(--delay) infinite;
+        }
+        @keyframes snowfall {
+            to { transform: translate(var(--drift), 520px); }
+        }
+
+        /* The tree and its decorations live on a 300×400 "stage", sized by layout().
+           --u is one stage unit in px, so decorations scale with the tree. */
+        .stage {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+        /* ── Decorations ── */
+        .deco {
+            position: absolute;
+            width:  calc(var(--u) * var(--w));
+            height: calc(var(--u) * var(--h));
+            transform: translate(-50%, -50%);
+            touch-action: none;
+            cursor: grab;
+        }
+        .deco::before { content: ''; position: absolute; inset: -8px; }   /* bigger touch target */
+        .deco svg { position: relative; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+        .deco .emo {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: calc(var(--u) * var(--h) * 0.85);
+            line-height: 1;
+            pointer-events: none;
+        }
+        .deco.pop { animation: decoIn 0.35s cubic-bezier(0.34, 1.6, 0.64, 1); }
+        @keyframes decoIn {
+            from { transform: translate(-50%, -50%) scale(0.3); }
+        }
+
+        /* Lights: dull when off; glow and twinkle (each at its own pace) when on */
+        .deco.bulb svg { filter: brightness(0.55) saturate(0.7); transition: filter 0.3s; }
+        .deco.bulb::after {
+            content: '';
+            position: absolute;
+            inset: -70%;
+            border-radius: 50%;
+            background: radial-gradient(circle, currentColor 0%, transparent 65%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .lights-on .deco.bulb svg { filter: brightness(1.15); }
+        .lights-on .deco.bulb::after {
+            animation: twinkle var(--tw) ease-in-out var(--td) infinite alternate;
+        }
+        @keyframes twinkle {
+            from { opacity: 0.95; transform: scale(1); }
+            to   { opacity: 0.2;  transform: scale(0.65); }
+        }
+
+        .deco.topper { z-index: 2; }
+        .deco.topper svg { filter: drop-shadow(0 0 6px currentColor); }   /* glows in its own color */
+        .deco.topper.celebrate { animation: starShow 1.1s ease-in-out; }
+        @keyframes starShow {
+            0%   { transform: translate(-50%, -50%) scale(1)   rotate(0); }
+            40%  { transform: translate(-50%, -50%) scale(1.5) rotate(200deg); }
+            100% { transform: translate(-50%, -50%) scale(1)   rotate(360deg); }
+        }
+        .sparkle {
+            position: absolute;
+            font-size: calc(var(--u) * 22);
+            line-height: 1;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            animation: sparkleOut 0.9s ease-out forwards;
+        }
+        @keyframes sparkleOut {
+            to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.4); opacity: 0; }
+        }
+
+        /* Dragged copy, in screen coordinates */
+        .drag-clone {
+            position: fixed;
+            z-index: 300;
+            pointer-events: none;
+            filter: drop-shadow(0 8px 10px rgba(0,0,0,0.45));
+        }
+        .drag-clone.flying { transition: left 0.2s ease, top 0.2s ease; }
+        .drag-clone.poof {
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            transform: translate(-50%, -50%) scale(0.2);
+            opacity: 0;
+        }
+
+        /* ── Controls: lights switch + clear ── */
+        .controls { display: flex; gap: 10px; width: 100%; justify-content: center; }
+        .controls .new-game-btn { flex: 1; max-width: 200px; padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+        .lights-btn.on {
+            background: linear-gradient(135deg, #ffd700, #ff9a3c);
+            color: #2a1050;
+            border-color: transparent;
+            box-shadow: 0 0 18px rgba(255,215,0,0.5);
+        }
+        .clear-btn.armed { background: rgba(244,63,94,0.35); border-color: #f43f5e; }
+
+        /* ── Tabs + tray ── */
+        .tabs { display: flex; gap: 6px; width: 100%; }
+        .tab {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0 6px;
+            height: 36px;
+            border-radius: 50px;
+            border: 1.5px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 800;
+            cursor: pointer;
+            touch-action: none;
+            white-space: nowrap;
+        }
+        .tab.active { background: rgba(255,215,0,0.22); border-color: #ffd700; }
+        @media (max-width: 370px) { .tab .label { display: none; } .tab { font-size: 1.1rem; } }
+
+        .tray {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            align-content: center;
+            gap: 6px;
+            padding: 10px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+        }
+        .tray-item {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 14px;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .tray-item:active { transform: scale(0.92); }
+        .tray-item svg { width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+        .tray-item .emo { font-size: 1.7rem; line-height: 1; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="confetti-wrap" id="confetti"></div>
+
+<div class="game">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+        <a class="back-btn" href="index.html">← Games</a>
+        <h1>🎄 Decorate!</h1>
+        <div class="top-spacer"></div>
+    </div>
+
+    <!-- Winter scene with the tree -->
+    <div class="scene" id="scene">
+        <div class="flakes" id="flakes"></div>
+        <div class="moon">🌙</div>
+        <div class="ground"></div>
+        <div class="stage" id="stage">
+            <svg viewBox="0 0 300 400" aria-label="Christmas tree">
+                <rect x="136" y="328" width="28" height="44" rx="4" fill="#8b5a2b"/>
+                <g fill="#2f9e44" stroke="#237032" stroke-width="3" stroke-linejoin="round" id="treeShape"></g>
+            </svg>
+            <div id="decos"></div>
+        </div>
+    </div>
+
+    <!-- Lights switch + clear -->
+    <div class="controls">
+        <button class="new-game-btn lights-btn" id="lightsBtn" onclick="toggleLights()">💡 Lights: Off</button>
+        <button class="new-game-btn clear-btn" id="clearBtn" onclick="onClear()">🗑️ Clear</button>
+    </div>
+
+    <!-- Decoration tabs + tray -->
+    <div class="tabs" id="tabs"></div>
+    <div class="tray" id="tray"></div>
+
+</div>
+
+<script src="shared/kit.js?v=1"></script>
+<script>
+    /* ── Tree shape (stage units, 300×400) ── */
+    // Three stacked triangles: apex y, base y, half-width at the base.
+    const TIERS = [
+        { ay: 40,  by: 150, hw: 58  },
+        { ay: 95,  by: 240, hw: 84  },
+        { ay: 165, by: 335, hw: 114 },
+    ];
+    const STAR_POS = { x: 150, y: 32 };
+    const GROUND   = 390;   // presents sit with their bottom here
+    const MAX_DECOS = 100;
+
+    function pointInTree(x, y, margin = 4) {
+        return TIERS.some(t => y >= t.ay - margin && y <= t.by + margin &&
+            Math.abs(x - 150) <= t.hw * (y - t.ay) / (t.by - t.ay) + margin);
+    }
+
+    /* ── Decoration drawings ── */
+    const ball = c => `<svg viewBox="0 0 32 36"><circle cx="16" cy="5" r="3.5" fill="none" stroke="#c9a227" stroke-width="2"/>` +
+        `<rect x="11.5" y="6" width="9" height="5" rx="1.5" fill="#c9a227"/><circle cx="16" cy="22" r="13" fill="${c}"/>` +
+        `<circle cx="11" cy="17" r="4" fill="white" opacity="0.5"/></svg>`;
+    const bulb = c => `<svg viewBox="0 0 20 28"><rect x="6" y="0" width="8" height="7" rx="1.5" fill="#6b6f76"/>` +
+        `<ellipse cx="10" cy="17" rx="7.5" ry="10" fill="${c}"/><ellipse cx="7.5" cy="14" rx="2" ry="3.5" fill="white" opacity="0.6"/></svg>`;
+    const gift = (w, h, box, ribbon) => `<svg viewBox="0 0 ${w} ${h}">` +
+        `<rect x="0" y="${h * 0.22}" width="${w}" height="${h * 0.78}" rx="3" fill="${box}"/>` +
+        `<rect x="-2" y="${h * 0.16}" width="${w + 4}" height="${h * 0.16}" rx="2" fill="${box}" stroke="rgba(0,0,0,0.15)"/>` +
+        `<rect x="${w / 2 - 4}" y="${h * 0.16}" width="8" height="${h * 0.84}" fill="${ribbon}"/>` +
+        `<ellipse cx="${w / 2 - 7}" cy="${h * 0.1}" rx="7" ry="5" fill="${ribbon}"/><ellipse cx="${w / 2 + 7}" cy="${h * 0.1}" rx="7" ry="5" fill="${ribbon}"/></svg>`;
+    const star = (fill, edge) => `<svg viewBox="0 0 100 100"><polygon points="50,4 61,38 97,38 68,59 79,93 50,72 21,93 32,59 3,38 39,38" ` +
+        `fill="${fill}" stroke="${edge}" stroke-width="4" stroke-linejoin="round"/></svg>`;
+    const emo = e => `<span class="emo">${e}</span>`;
+
+    // Everything in the tray: which tab it's in, its size on the tree (stage units), and its drawing.
+    const CATALOG = {
+        'ball-red':    { cat: 'ornaments', size: [26, 29], html: ball('#e63946') },
+        'ball-gold':   { cat: 'ornaments', size: [26, 29], html: ball('#fcc419') },
+        'ball-blue':   { cat: 'ornaments', size: [26, 29], html: ball('#339af0') },
+        'ball-purple': { cat: 'ornaments', size: [26, 29], html: ball('#9775fa') },
+        'ball-silver': { cat: 'ornaments', size: [26, 29], html: ball('#ced4da') },
+        'ball-pink':   { cat: 'ornaments', size: [26, 29], html: ball('#f783ac') },
+        'candycane':   { cat: 'ornaments', size: [20, 30], html:
+            '<svg viewBox="0 0 24 36"><path d="M8 33 V12 a6 6 0 0 1 12 0 v3" fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>' +
+            '<path d="M8 33 V12 a6 6 0 0 1 12 0 v3" fill="none" stroke="#e03131" stroke-width="6" stroke-dasharray="4 4"/></svg>' },
+        'gingerbread': { cat: 'ornaments', size: [28, 32], html:
+            '<svg viewBox="0 0 32 36"><path d="M5 17 H27 M16 13 V25 M16 24 L9 33 M16 24 L23 33" fill="none" stroke="#b5652b" stroke-width="8" stroke-linecap="round"/>' +
+            '<circle cx="16" cy="8" r="7" fill="#b5652b"/><circle cx="13.5" cy="7" r="1.3" fill="white"/><circle cx="18.5" cy="7" r="1.3" fill="white"/>' +
+            '<circle cx="16" cy="18" r="1.4" fill="white"/><circle cx="16" cy="22" r="1.4" fill="white"/></svg>' },
+        'bell':        { cat: 'ornaments', size: [28, 28], html: emo('🔔') },
+        'snowflake':   { cat: 'ornaments', size: [28, 28], html: emo('❄️') },
+        'stocking':    { cat: 'ornaments', size: [28, 28], html: emo('🧦') },
+        'bow':         { cat: 'ornaments', size: [28, 28], html: emo('🎀') },
+
+        'bulb-red':    { cat: 'lights', size: [16, 22], color: '#ff4d4d', html: bulb('#ff4d4d') },
+        'bulb-orange': { cat: 'lights', size: [16, 22], color: '#ffa94d', html: bulb('#ffa94d') },
+        'bulb-yellow': { cat: 'lights', size: [16, 22], color: '#ffe066', html: bulb('#ffe066') },
+        'bulb-green':  { cat: 'lights', size: [16, 22], color: '#69db7c', html: bulb('#69db7c') },
+        'bulb-blue':   { cat: 'lights', size: [16, 22], color: '#4dabf7', html: bulb('#4dabf7') },
+        'bulb-purple': { cat: 'lights', size: [16, 22], color: '#da77f2', html: bulb('#da77f2') },
+
+        'star-gold':   { cat: 'star', size: [54, 54], color: '#ffd43b', html: star('#ffd43b', '#f59f00') },
+        'star-silver': { cat: 'star', size: [54, 54], color: '#e9ecef', html: star('#e9ecef', '#adb5bd') },
+        'star-red':    { cat: 'star', size: [54, 54], color: '#ff6b6b', html: star('#ff6b6b', '#e03131') },
+        'star-blue':   { cat: 'star', size: [54, 54], color: '#74c0fc', html: star('#74c0fc', '#1c7ed6') },
+        'star-green':  { cat: 'star', size: [54, 54], color: '#8ce99a', html: star('#8ce99a', '#2f9e44') },
+        'star-pink':   { cat: 'star', size: [54, 54], color: '#faa2c1', html: star('#faa2c1', '#e64980') },
+
+        'gift-red':    { cat: 'presents', size: [48, 40], html: gift(48, 40, '#e03131', '#ffd43b') },
+        'gift-blue':   { cat: 'presents', size: [58, 46], html: gift(58, 46, '#1c7ed6', '#ffffff') },
+        'gift-green':  { cat: 'presents', size: [40, 58], html: gift(40, 58, '#2f9e44', '#e03131') },
+        'gift-purple': { cat: 'presents', size: [70, 38], html: gift(70, 38, '#7048e8', '#fcc419') },
+        'gift-pink':   { cat: 'presents', size: [46, 46], html: gift(46, 46, '#f06595', '#22b8cf') },
+    };
+    const TABS = [
+        { id: 'ornaments', icon: '🔴', label: 'Ornaments' },
+        { id: 'lights',    icon: '💡', label: 'Lights' },
+        { id: 'star',      icon: '⭐', label: 'Stars' },
+        { id: 'presents',  icon: '🎁', label: 'Presents' },
+    ];
+    const CHIMES = [784, 880, 988, 1175, 1319];
+
+    /* ── State ── */
+    let decorations = [];   // { kind, x, y, el } in stage units
+    let lightsOn    = false;
+    let tab         = 'ornaments';
+
+    const scene   = document.getElementById('scene');
+    const stage   = document.getElementById('stage');
+    const decosEl = document.getElementById('decos');
+    const trayEl  = document.getElementById('tray');
+
+    document.getElementById('treeShape').innerHTML = TIERS.map(t =>
+        `<polygon points="150,${t.ay} ${150 + t.hw},${t.by} ${150 - t.hw},${t.by}"/>`).join('');
+
+    /* ── Placement rules ── */
+    // Where a decoration dropped at (x, y) ends up, or null if it doesn't belong there.
+    function snap(kind, x, y) {
+        const { cat, size } = CATALOG[kind];
+        if (cat === 'star')     return (y <= 130 && Math.abs(x - 150) <= 100) ? { ...STAR_POS } : null;
+        if (cat === 'presents') return { x: Math.min(Math.max(x, 30), 270), y: GROUND - size[1] / 2 };
+        return pointInTree(x, y) ? { x, y } : null;
+    }
+
+    // Add a new decoration from the tray. Returns the new entry, or null if it doesn't fit there.
+    function addDecoration(kind, x, y) {
+        const pos = snap(kind, x, y);
+        if (!pos || decorations.length >= MAX_DECOS) return null;
+        if (CATALOG[kind].cat === 'star') decorations.filter(d => CATALOG[d.kind].cat === 'star').forEach(removeDecoration);
+
+        const { cat, size, html, color } = CATALOG[kind];
+        const el = document.createElement('div');
+        el.className = 'deco pop' + (cat === 'lights' ? ' bulb' : cat === 'star' ? ' topper' : '');
+        el.style.setProperty('--w', size[0]);
+        el.style.setProperty('--h', size[1]);
+        if (color) {
+            el.style.color = color;
+            el.style.setProperty('--tw', `${(Math.random() * 0.8 + 0.5).toFixed(2)}s`);
+            el.style.setProperty('--td', `-${(Math.random() * 1.3).toFixed(2)}s`);
+        }
+        el.innerHTML = html;
+        const entry = { kind, x: pos.x, y: pos.y, el };
+        el.addEventListener('pointerdown', e => beginDrag(e, kind, entry));
+        el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+        decosEl.appendChild(el);
+        decorations.push(entry);
+        position(entry);
+
+        Kit.tone(CHIMES[Math.floor(Math.random() * CHIMES.length)], 0.15, 'sine', 0.14);
+        if (cat === 'star') celebrateStar(entry);
+        return entry;
+    }
+
+    function moveDecoration(entry, x, y) {
+        const pos = snap(entry.kind, x, y);
+        if (!pos) return false;
+        entry.x = pos.x;
+        entry.y = pos.y;
+        position(entry);
+        Kit.tone(CHIMES[Math.floor(Math.random() * CHIMES.length)], 0.12, 'sine', 0.12);
+        if (CATALOG[entry.kind].cat === 'star') celebrateStar(entry);
+        return true;
+    }
+
+    function removeDecoration(entry) {
+        entry.el.remove();
+        decorations = decorations.filter(d => d !== entry);
+    }
+
+    function position(entry) {
+        entry.el.style.left = (entry.x / 300 * 100) + '%';
+        entry.el.style.top  = (entry.y / 400 * 100) + '%';
+    }
+
+    /* ── Star celebration: spin, sparkles, jingle, confetti ── */
+    function celebrateStar(entry) {
+        const el = entry.el;
+        el.classList.remove('pop', 'celebrate');
+        void el.offsetWidth;   // restart the animation
+        el.classList.add('celebrate');
+        for (let i = 0; i < 10; i++) {
+            const s = document.createElement('div');
+            s.className = 'sparkle';
+            s.textContent = '✨';
+            const a = (i / 10) * Math.PI * 2;
+            s.style.left = el.style.left;
+            s.style.top  = el.style.top;
+            s.style.setProperty('--dx', `${Math.cos(a) * 70}px`);
+            s.style.setProperty('--dy', `${Math.sin(a) * 70}px`);
+            s.addEventListener('animationend', () => s.remove());
+            decosEl.appendChild(s);
+        }
+        [784, 988, 1175, 1568, 1175, 1568].forEach((f, i) =>
+            setTimeout(() => Kit.tone(f, 0.18, 'sine', 0.16), i * 120));
+        Kit.confetti(90);
+    }
+
+    /* ── Lights switch ── */
+    function toggleLights() {
+        lightsOn = !lightsOn;
+        stage.classList.toggle('lights-on', lightsOn);
+        const btn = document.getElementById('lightsBtn');
+        btn.textContent = lightsOn ? '💡 Lights: On' : '💡 Lights: Off';
+        btn.classList.toggle('on', lightsOn);
+        const notes = lightsOn ? [1319, 1568, 1760, 2093] : [784, 523];
+        notes.forEach((f, i) => setTimeout(() => Kit.tone(f, 0.12, 'sine', 0.12), i * 70));
+    }
+
+    /* ── Clear: tap twice so one stray tap doesn't wipe the tree ── */
+    let clearTimer = null;
+    function onClear() {
+        const btn = document.getElementById('clearBtn');
+        if (!btn.classList.contains('armed')) {
+            btn.classList.add('armed');
+            btn.textContent = 'Tap again to clear';
+            clearTimer = setTimeout(disarmClear, 3000);
+            return;
+        }
+        disarmClear();
+        clearAll();
+    }
+    function disarmClear() {
+        clearTimeout(clearTimer);
+        const btn = document.getElementById('clearBtn');
+        btn.classList.remove('armed');
+        btn.textContent = '🗑️ Clear';
+    }
+    function clearAll() {
+        [...decorations].forEach(removeDecoration);
+        [523, 440, 349, 262].forEach((f, i) => setTimeout(() => Kit.tone(f, 0.1, 'triangle', 0.12), i * 60));
+    }
+
+    /* ── Tabs + tray ── */
+    function renderTabs() {
+        document.getElementById('tabs').innerHTML = TABS.map(t =>
+            `<button class="tab${t.id === tab ? ' active' : ''}" onclick="showTab('${t.id}')">${t.icon} <span class="label">${t.label}</span></button>`).join('');
+    }
+
+    function showTab(id) {
+        tab = id;
+        renderTabs();
+        trayEl.innerHTML = '';
+        Object.entries(CATALOG).filter(([, c]) => c.cat === id).forEach(([kind, c]) => {
+            const item = document.createElement('div');
+            item.className = 'tray-item';
+            item.dataset.kind = kind;
+            item.innerHTML = c.html;
+            item.addEventListener('pointerdown', e => beginDrag(e, kind, null));
+            trayEl.appendChild(item);
+        });
+    }
+
+    /* ── Dragging (new from the tray, or moving one already placed) ── */
+    let drag = null;   // { kind, entry, clone, ox, oy, from }
+
+    function unit() { return stage.getBoundingClientRect().width / 300; }
+
+    function beginDrag(e, kind, entry) {
+        if (drag) return;
+        e.preventDefault();
+        const u = unit();
+        const [w, h] = CATALOG[kind].size;
+        const clone = document.createElement('div');
+        clone.className = 'deco drag-clone' + (CATALOG[kind].cat === 'lights' ? ' bulb' : '');
+        clone.style.setProperty('--u', u + 'px');
+        clone.style.setProperty('--w', w);
+        clone.style.setProperty('--h', h);
+        clone.innerHTML = CATALOG[kind].html;
+        document.body.appendChild(clone);
+
+        let ox = 0, oy = -(h * u * 0.6 + 14);   // from the tray: float just above the finger
+        if (entry) {
+            const r = entry.el.getBoundingClientRect();
+            ox = r.left + r.width / 2 - e.clientX;
+            oy = r.top + r.height / 2 - e.clientY;
+            entry.el.style.visibility = 'hidden';
+        }
+        drag = { kind, entry, clone, ox, oy, from: e.currentTarget };
+        moveClone(e.clientX, e.clientY);
+        Kit.tone(660, 0.06, 'sine', 0.1);
+    }
+
+    function moveClone(cx, cy) {
+        drag.clone.style.left = (cx + drag.ox) + 'px';
+        drag.clone.style.top  = (cy + drag.oy) + 'px';
+    }
+
+    document.addEventListener('pointermove', e => { if (drag) moveClone(e.clientX, e.clientY); });
+
+    function endDrag(e) {
+        if (!drag) return;
+        const { kind, entry, clone, from } = drag;
+        drag = null;
+
+        // The decoration's center, in stage units
+        const cx = parseFloat(clone.style.left);
+        const cy = parseFloat(clone.style.top);
+        const sr = scene.getBoundingClientRect();
+        const st = stage.getBoundingClientRect();
+        const inScene = e.type === 'pointerup' && cx >= sr.left && cx <= sr.right && cy >= sr.top && cy <= sr.bottom;
+        const x = (cx - st.left) / st.width * 300;
+        const y = (cy - st.top) / st.height * 400;
+
+        let placed = null;
+        if (inScene) {
+            if (entry) placed = moveDecoration(entry, x, y) ? entry : null;
+            else       placed = addDecoration(kind, x, y);
+        }
+
+        if (placed) {
+            placed.el.style.visibility = '';
+            clone.remove();
+        } else if (entry) {
+            // Dragged off the tree: it goes away
+            removeDecoration(entry);
+            poof(clone);
+        } else {
+            // Didn't fit: float back to the tray
+            const r = from.getBoundingClientRect();
+            clone.classList.add('flying');
+            clone.style.left = (r.left + r.width / 2) + 'px';
+            clone.style.top  = (r.top + r.height / 2) + 'px';
+            Kit.tone(240, 0.12, 'triangle', 0.12);
+            setTimeout(() => clone.remove(), 220);
+        }
+    }
+    document.addEventListener('pointerup', endDrag);
+    document.addEventListener('pointercancel', endDrag);
+
+    function poof(clone) {
+        clone.classList.add('poof');
+        Kit.tone(330, 0.08, 'triangle', 0.12);
+        setTimeout(() => Kit.tone(220, 0.1, 'triangle', 0.1), 70);
+        setTimeout(() => clone.remove(), 260);
+    }
+
+    /* ── Fit the 3:4 stage inside the scene ── */
+    function layout() {
+        const r = scene.getBoundingClientRect();
+        const h = Math.min(r.height, r.width * 4 / 3);
+        stage.style.height = h + 'px';
+        stage.style.width  = (h * 0.75) + 'px';
+        stage.style.setProperty('--u', (h * 0.75 / 300) + 'px');
+
+        // Keep the tray two rows tall on every tab, so the page doesn't jump around
+        const cell = (trayEl.clientWidth - 20 - 5 * 6) / 6;
+        trayEl.style.minHeight = (2 * cell + 6 + 24) + 'px';
+    }
+    window.addEventListener('resize', layout);
+
+    /* ── Falling snow ── */
+    const flakesEl = document.getElementById('flakes');
+    for (let i = 0; i < 28; i++) {
+        const f = document.createElement('div');
+        f.className = 'flake';
+        const sz = (Math.random() * 4 + 2).toFixed(1);
+        f.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random() * 100}%;` +
+            `--t:${(Math.random() * 5 + 6).toFixed(1)}s;--delay:-${(Math.random() * 10).toFixed(1)}s;--drift:${(Math.random() * 40 - 20).toFixed(0)}px`;
+        flakesEl.appendChild(f);
+    }
+
+    /* ── Start ── */
+    layout();
+    showTab('ornaments');
+</script>
+</body>
+</html>

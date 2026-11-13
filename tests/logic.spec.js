@@ -262,3 +262,120 @@ test.describe('snowman.html', () => {
     await expect(page.locator('#p-middle')).toHaveClass(/on/);
   });
 });
+
+test.describe('christmastree.html', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+    await page.goto(gameUrl('christmastree.html'));
+  });
+
+  // Screen point for a spot on the 300×400 stage
+  async function stagePoint(page, x, y) {
+    const b = await page.locator('#stage').boundingBox();
+    return { x: b.x + x / 300 * b.width, y: b.y + y / 400 * b.height };
+  }
+  async function drag(page, from, to) {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 5 });
+    await page.mouse.up();
+    await page.clock.runFor(400);
+  }
+
+  test('ornaments and lights only go on the tree', async ({ page }) => {
+    const r = await page.evaluate(() => [
+      pointInTree(150, 250), pointInTree(150, 100), pointInTree(20, 60), pointInTree(280, 120),
+      !!addDecoration('ball-red', 150, 250), !!addDecoration('bulb-blue', 140, 120), !!addDecoration('bell', 20, 60),
+    ]);
+    expect(r).toEqual([true, true, false, false, true, true, false]);
+    expect(await page.evaluate(() => decorations.length)).toBe(2);
+  });
+
+  test('a star snaps to the top, there is only one, and it celebrates', async ({ page }) => {
+    const errors = trackErrors(page);
+    expect(await page.evaluate(() => addDecoration('star-gold', 150, 300))).toBeNull();   // too low
+    const pos = await page.evaluate(() => { const d = addDecoration('star-gold', 110, 90); return { x: d.x, y: d.y }; });
+    expect(pos).toEqual(await page.evaluate(() => STAR_POS));
+    await expect(page.locator('.deco.topper')).toHaveClass(/celebrate/);
+    await page.clock.runFor(1500);
+    await expect(page.locator('.deco.topper')).toHaveCSS('opacity', '1');   // not hidden by kit.css's .star
+    await expect(page.locator('#confetti .cp').first()).toBeAttached();
+
+    // A different color replaces it
+    await page.evaluate(() => addDecoration('star-blue', 160, 60));
+    expect(await page.evaluate(() => decorations.filter(d => CATALOG[d.kind].cat === 'star').map(d => d.kind))).toEqual(['star-blue']);
+    expect(errors).toEqual([]);
+  });
+
+  test('presents snap down to the ground under the tree', async ({ page }) => {
+    const r = await page.evaluate(() => {
+      const d = addDecoration('gift-green', 100, 120);
+      return { x: d.x, bottom: d.y + CATALOG['gift-green'].size[1] / 2, ground: GROUND };
+    });
+    expect(r.x).toBe(100);
+    expect(r.bottom).toBe(r.ground);
+  });
+
+  test('the lights switch makes every bulb twinkle, including ones added later', async ({ page }) => {
+    await page.evaluate(() => addDecoration('bulb-red', 150, 250));
+    const glow = () => page.$$eval('.deco.bulb', els => els.map(e => getComputedStyle(e, '::after').animationName));
+    expect(await glow()).toEqual(['none']);
+
+    await page.locator('#lightsBtn').click();
+    await expect(page.locator('#lightsBtn')).toHaveText('💡 Lights: On');
+    await page.evaluate(() => addDecoration('bulb-green', 150, 200));
+    expect(await glow()).toEqual(['twinkle', 'twinkle']);
+
+    await page.locator('#lightsBtn').click();
+    expect(await glow()).toEqual(['none', 'none']);
+  });
+
+  test('clear takes two taps', async ({ page }) => {
+    await page.evaluate(() => { addDecoration('ball-red', 150, 250); addDecoration('gift-red', 150, 0); });
+    const clear = page.locator('#clearBtn');
+    await clear.click();
+    await expect(clear).toHaveText('Tap again to clear');
+    expect(await page.evaluate(() => decorations.length)).toBe(2);
+
+    await page.clock.runFor(3500);   // waited too long: back to normal
+    await expect(clear).toHaveText('🗑️ Clear');
+    await clear.click();
+    await clear.click();
+    expect(await page.evaluate(() => decorations.length)).toBe(0);
+    await expect(page.locator('#decos .deco')).toHaveCount(0);
+  });
+
+  test('drag from the tray onto the tree, move it, then drag it off to remove it', async ({ page }) => {
+    const errors = trackErrors(page);
+    const item = await page.locator('.tray-item').first().boundingBox();
+    const from = { x: item.x + item.width / 2, y: item.y + item.height / 2 };
+
+    // Off the tree (top-left corner of the sky): floats back, nothing added
+    await drag(page, from, await stagePoint(page, 10, 30));
+    expect(await page.evaluate(() => decorations.length)).toBe(0);
+
+    // Onto the middle of the tree (the piece floats a little above the finger, so aim low)
+    await drag(page, from, await stagePoint(page, 150, 290));
+    expect(await page.evaluate(() => decorations.length)).toBe(1);
+    const placed = page.locator('#decos .deco').first();
+
+    // Move it within the tree
+    const b = await placed.boundingBox();
+    await drag(page, { x: b.x + b.width / 2, y: b.y + b.height / 2 }, await stagePoint(page, 150, 200));
+    const y = await page.evaluate(() => decorations[0].y);
+    expect(Math.abs(y - 200)).toBeLessThan(3);
+
+    // Drag it off the tree: removed
+    const b2 = await placed.boundingBox();
+    await drag(page, { x: b2.x + b2.width / 2, y: b2.y + b2.height / 2 }, await stagePoint(page, 15, 40));
+    expect(await page.evaluate(() => decorations.length)).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('every tab fills the tray', async ({ page }) => {
+    for (const [i, n] of [[0, 12], [1, 6], [2, 6], [3, 5]]) {
+      await page.locator('.tab').nth(i).click();
+      await expect(page.locator('.tray-item')).toHaveCount(n);
+    }
+  });
+});
