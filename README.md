@@ -1,6 +1,6 @@
 # 🦄 Ellie's Games
 
-**29 touch-friendly little games, made for Ellie and Grandpa to play together on a phone.**
+**30 touch-friendly little games, made for Ellie and Grandpa to play together on a phone.**
 
 Memory matching, tic-tac-toe, finger painting, Plinko, washing a muddy puppy, and more, each with big buttons, bright colors and plenty of confetti.
 
@@ -68,6 +68,7 @@ Memory matching, tic-tac-toe, finger painting, Plinko, washing a muddy puppy, an
 | 🕵️ | **Hangman!** | Guess the letters of a picture word before the drawing is done |
 | ⛄ | **Build a Snowman!** | Stack the snowballs, then add a hat, eyes, nose and arms, for toddlers |
 | 🎄 | **Decorate the Tree!** | Hang ornaments and twinkly lights, top it with a star, add presents |
+| 🕎 | **Light the Menorah!** | Fill the menorah with candles, light them from the shamash, decorate, spin the dreidel |
 
 ## 🛠️ How it's made
 

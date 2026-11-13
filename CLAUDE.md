@@ -88,6 +88,7 @@ rainbow-brick-burst.html  — Rainbow Brick Burst! (Breakout/Arkanoid-style, �
 hangman.html          — Hangman! (guess letters of a picture-hinted word, 10 misses draw head→frown, confetti on win)
 snowman.html          — Build a Snowman! (drag middle ball, then head, then hat/eyes/nose/2 arms onto the base; smile + confetti when done, for toddlers)
 christmastree.html    — Decorate the Tree! (free play: drag ornaments/bulbs onto the tree, star snaps to top + celebrates, presents snap to ground, lights switch twinkles bulbs, two-tap Clear)
+hanukkah.html         — Light the Menorah! (free play: candles snap into 9 holders, shamash self-lights, drag its flame or tap a candle to light; all 9 lit celebrates; sill/window decorations; tap a dreidel to spin; two-tap Clear)
 connect-four.html, road-racer.html, whack-a-mole.html — older games, not linked from index.html
 tests/              — Playwright tests
 CLAUDE.md           — this file

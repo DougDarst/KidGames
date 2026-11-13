@@ -383,3 +383,135 @@ test.describe('christmastree.html', () => {
     }
   });
 });
+
+test.describe('hanukkah.html', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+    await page.goto(gameUrl('hanukkah.html'));
+  });
+
+  async function stagePoint(page, x, y) {
+    const b = await page.locator('#stage').boundingBox();
+    return { x: b.x + x / 300 * b.width, y: b.y + y / 300 * b.height };
+  }
+  // Fill every holder; the shamash lights itself, the others start unlit.
+  const fillMenorah = page => page.evaluate(() =>
+    HOLDERS.map(h => addDecoration('candle-blue', h.x, h.y - 20)).map(d => d.holder));
+
+  test('candles snap into the nearest empty holder, one per holder', async ({ page }) => {
+    const r = await page.evaluate(() => {
+      const a = addDecoration('candle-red', 63, 135);    // near holder 1
+      const b = addDecoration('candle-red', 63, 135);    // holder 1 is taken: goes to a neighbor
+      const far = addDecoration('candle-red', 150, 40); // nowhere near a holder
+      return [a.holder, b.holder, far];
+    });
+    expect(r[0]).toBe(1);
+    expect([0, 2]).toContain(r[1]);
+    expect(r[2]).toBeNull();
+  });
+
+  test('all nine holders can be filled, and a tenth candle has nowhere to go', async ({ page }) => {
+    expect(await fillMenorah(page)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(await page.evaluate(() => addDecoration('candle-red', 90, 128))).toBeNull();
+  });
+
+  test('the shamash lights itself; tapping a candle lights it from the shamash', async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.evaluate(() => addDecoration('candle-pink', HOLDERS[2].x, 120));
+    // No shamash yet: tapping doesn't light it
+    let candle = page.locator('#decos .deco.candle').first();
+    await candle.click();
+    await page.clock.runFor(500);
+    expect(await page.evaluate(() => decorations[0].lit)).toBe(false);
+
+    await page.evaluate(() => addDecoration('candle-white', 150, 90));
+    expect(await page.evaluate(() => candleIn(SHAMASH).lit)).toBe(true);
+    await candle.click();
+    await page.clock.runFor(500);
+    expect(await page.evaluate(() => candleIn(2).lit)).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  test("dragging the shamash's flame over a candle lights it", async ({ page }) => {
+    await page.evaluate(() => { addDecoration('candle-white', 150, 90); addDecoration('candle-blue', HOLDERS[6].x, 125); });
+    await page.waitForTimeout(500);   // let the candles finish popping in before measuring them
+    const sh = await page.evaluate(() => { const r = candleIn(SHAMASH).el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    const target = await page.evaluate(() => { const r = candleIn(6).el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y }; });
+    await page.mouse.move(sh.x, sh.y);
+    await page.mouse.down();
+    // The flame floats a little above the finger, so aim the finger just below the candle's top
+    const lift = await page.evaluate(() => candleIn(SHAMASH).el.querySelector('.flame').getBoundingClientRect().height * 1.6);
+    await page.mouse.move(target.x, target.y + lift, { steps: 10 });
+    await page.mouse.up();
+    expect(await page.evaluate(() => candleIn(6).lit)).toBe(true);
+    expect(await page.evaluate(() => candleIn(SHAMASH).holder)).toBe(4);   // the shamash didn't move
+  });
+
+  test('lighting all nine celebrates; taking one away resets', async ({ page }) => {
+    await fillMenorah(page);
+    await expect(page.locator('#status')).not.toHaveText(/Happy Hanukkah/);
+    await page.evaluate(() => decorations.forEach(lightCandle));
+    await expect(page.locator('#status')).toHaveText('✨ Happy Hanukkah! ✨');
+    await expect(page.locator('#confetti .cp').first()).toBeAttached();
+    await expect(page.locator('#scene')).toHaveClass(/glow/);
+
+    await page.evaluate(() => removeDecoration(candleIn(0)));
+    await expect(page.locator('#scene')).not.toHaveClass(/glow/);
+    expect(await page.evaluate(() => isComplete())).toBe(false);
+  });
+
+  test('sill things sit on the sill; window things hang above it', async ({ page }) => {
+    const r = await page.evaluate(() => {
+      const gelt = addDecoration('gelt', 80, 40);
+      const star = addDecoration('star-blue', 80, 60);
+      const low  = addDecoration('star-blue', 80, 290);
+      return { geltBottom: gelt.y + CATALOG.gelt.size[1] / 2, star: [star.x, star.y], low, table: TABLE_Y };
+    });
+    expect(r.geltBottom).toBe(r.table);
+    expect(r.star).toEqual([80, 60]);
+    expect(r.low).toBeNull();
+  });
+
+  test('tapping a dreidel spins it and lands on a letter', async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.evaluate(() => addDecoration('dreidel-blue', 150, 0));
+    const dreidel = page.locator('#decos .deco.dreidel');
+    await dreidel.click();
+    await expect(dreidel).toHaveClass(/spinning/);
+    await page.clock.runFor(1700);
+    await expect(dreidel).not.toHaveClass(/spinning/);
+    const letter = await page.evaluate(() => decorations[0].letter);
+    expect(['נ', 'ג', 'ה', 'ש']).toContain(letter);
+    await expect(dreidel.locator('text')).toHaveText(letter);
+    await expect(page.locator('#status')).toContainText(letter);
+    expect(errors).toEqual([]);
+  });
+
+  test('tabs fill the tray, items fit, and clear takes two taps', async ({ page }) => {
+    for (const [i, n] of [[0, 8], [1, 12]]) {
+      await page.locator('.tab').nth(i).click();
+      await expect(page.locator('.tray-item')).toHaveCount(n);
+      const tray = await page.locator('#tray').boundingBox();
+      for (const box of await page.$$eval('.tray-item', els => els.map(e => e.getBoundingClientRect().toJSON()))) {
+        expect(box.right).toBeLessThanOrEqual(tray.x + tray.width);
+      }
+    }
+    await fillMenorah(page);
+    await page.locator('#clearBtn').click();
+    expect(await page.evaluate(() => decorations.length)).toBe(9);
+    await page.locator('#clearBtn').click();
+    expect(await page.evaluate(() => decorations.length)).toBe(0);
+  });
+
+  test('drag a candle from the tray into the menorah', async ({ page }) => {
+    const item = await page.locator('.tray-item').first().boundingBox();
+    await page.mouse.move(item.x + item.width / 2, item.y + item.height / 2);
+    await page.mouse.down();
+    // The piece floats above the finger, so aim the finger below holder 7
+    const p = await stagePoint(page, 240, 150);
+    await page.mouse.move(p.x, p.y, { steps: 8 });
+    await page.mouse.up();
+    await page.clock.runFor(400);
+    expect(await page.evaluate(() => decorations.map(d => d.holder))).toEqual([7]);
+  });
+});
