@@ -160,13 +160,13 @@ test.describe('hangman.html', () => {
     }
   });
 
-  test('each wrong guess adds the next part, and the ninth loses', async ({ page }) => {
+  test('each wrong guess adds the next part, and the tenth loses', async ({ page }) => {
     const errors = trackErrors(page);
     expect(await page.evaluate(() => PARTS)).toEqual(
-      ['head', 'body', 'leg1', 'leg2', 'arm', 'eye1', 'eye2', 'nose', 'frown']);
+      ['head', 'body', 'leg1', 'leg2', 'arm1', 'arm2', 'eye1', 'eye2', 'nose', 'frown']);
     await page.evaluate(() => startRound({ word: 'CAT', emoji: '🐱' }));
 
-    const wrong = 'BDEFGHIJK';
+    const wrong = 'BDEFGHIJKL';
     for (let i = 0; i < wrong.length; i++) {
       await page.locator(`#key${wrong[i]}`).click();
       const shown = await page.$$eval('#figure .part.on', els => els.map(e => e.id));

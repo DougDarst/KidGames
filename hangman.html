@@ -241,7 +241,8 @@
                     <line   class="part" id="body" x1="140" y1="79"  x2="140" y2="135"/>
                     <line   class="part" id="leg1" x1="140" y1="135" x2="118" y2="175"/>
                     <line   class="part" id="leg2" x1="140" y1="135" x2="162" y2="175"/>
-                    <line   class="part" id="arm"  x1="140" y1="95"  x2="114" y2="120"/>
+                    <line   class="part" id="arm1" x1="140" y1="95"  x2="114" y2="120"/>
+                    <line   class="part" id="arm2" x1="140" y1="95"  x2="166" y2="120"/>
                     <circle class="part dot" id="eye1" cx="132" cy="51" r="3"/>
                     <circle class="part dot" id="eye2" cx="148" cy="51" r="3"/>
                     <line   class="part face" id="nose" x1="140" y1="55" x2="140" y2="61"/>
@@ -255,7 +256,7 @@
                 <div class="stat-label">wins</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="triesLeft">9</div>
+                <div class="stat-value" id="triesLeft">10</div>
                 <div class="stat-label">tries left</div>
             </div>
         </div>
@@ -305,7 +306,7 @@
         { word: 'TIGER', emoji: '🐯' }, { word: 'CLOUD', emoji: '☁️' },
     ];
     // One part per wrong guess, in this order; the last one loses.
-    const PARTS = ['head', 'body', 'leg1', 'leg2', 'arm', 'eye1', 'eye2', 'nose', 'frown'];
+    const PARTS = ['head', 'body', 'leg1', 'leg2', 'arm1', 'arm2', 'eye1', 'eye2', 'nose', 'frown'];
     const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
     /* ── State ── */

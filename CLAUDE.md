@@ -85,7 +85,7 @@ feed-the-dragon-sparkles.html — Feed the Dragon! (2-player dice game, roll and
 rainbow-archery.html       — Rainbow Archery! (drag to aim and shoot arrows at a moving target, 5 arrows per round, confetti on hit)
 candy-rescue.html         — Candy Rescue! (Space Invaders-style, shoot candy 🍬 at 4×3 animal grid, waves auto-advance, score tracked)
 rainbow-brick-burst.html  — Rainbow Brick Burst! (Breakout/Arkanoid-style, 🪄 wand paddle, sparkle ball, 8×5 pastel brick grid, no fail state — ball respawns, score/level carry over)
-hangman.html          — Hangman! (guess letters of a picture-hinted word, 9 misses draw head→frown, confetti on win)
+hangman.html          — Hangman! (guess letters of a picture-hinted word, 10 misses draw head→frown, confetti on win)
 connect-four.html, road-racer.html, whack-a-mole.html — older games, not linked from index.html
 tests/              — Playwright tests
 CLAUDE.md           — this file
