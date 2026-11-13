@@ -11,7 +11,7 @@ The games are played in **Chrome on an iPhone**, straight from GitHub Pages (htt
 Every page loads `shared/kit.css` and `shared/kit.js`. A game keeps only what is specific to it.
 
 - `kit.css` — reset, `bgShift`, the `#stars` field, `.back-btn`, `.top-spacer`, `.new-game-btn`, `.play-again-btn`, the `.overlay` / `.result-card` game-over screen, and confetti (`.confetti-wrap`, `.cp`). A game may override a property locally (e.g. `paint.html` shrinks its back button); it must not copy whole rules.
-- `kit.js` — on load, blocks pinch/double-tap zoom and fills `#stars` with 70 stars. Then provides:
+- `kit.js` — on load, blocks pinch/double-tap zoom, fills `#stars` with 70 stars, and sets the tab icon (favicon) to 🎮. Then provides:
   - `Kit.confetti(count = 80)` — drop confetti into `#confetti` (created if missing); pieces remove themselves.
   - `Kit.shuffle(arr)` — shuffled copy.
   - `Kit.audio()` — the shared `AudioContext`, resumed if iOS suspended it. Use this instead of `new AudioContext`.

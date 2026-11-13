@@ -1,9 +1,10 @@
 /* Shared helpers for Ellie's Games.
    Load just before a game's own <script>, at the end of <body>:
-   <script src="shared/kit.js?v=1"></script>
+   <script src="shared/kit.js?v=2"></script>
    Bump ?v= in every game when this file changes (see CLAUDE.md).
 
-   On load it blocks pinch/double-tap zoom and fills #stars (if present).
+   On load it blocks pinch/double-tap zoom, fills #stars (if present), and
+   sets the tab icon to a 🎮.
    Then the game can use: Kit.shuffle, Kit.confetti, Kit.audio, Kit.tone. */
 (function () {
     /* Prevent pinch-zoom and double-tap-zoom on iOS */
@@ -22,6 +23,16 @@
             s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--delay:-${(Math.random()*5).toFixed(1)}s`;
             starsEl.appendChild(s);
         }
+    }
+
+    /* ── Tab icon: a game controller on every page, drawn as a tiny SVG ── */
+    if (!document.querySelector('link[rel~="icon"]')) {
+        const icon = document.createElement('link');
+        icon.rel = 'icon';
+        icon.href = 'data:image/svg+xml,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+            '<text x="50" y="54" font-size="88" text-anchor="middle" dominant-baseline="middle">🎮</text></svg>');
+        document.head.appendChild(icon);
     }
 
     /* ── Sound ──

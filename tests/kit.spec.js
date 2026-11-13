@@ -45,3 +45,12 @@ test('Kit.tone and Kit.audio work without throwing', async ({ page }) => {
   expect(state).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('every page gets the game controller tab icon', async ({ page }) => {
+  for (const file of ['matching.html', 'index.html']) {
+    await page.goto(gameUrl(file));
+    const href = await page.locator('link[rel="icon"]').getAttribute('href');
+    expect(href.startsWith('data:image/svg+xml,')).toBe(true);
+    expect(decodeURIComponent(href)).toContain('>🎮</text>');
+  }
+});
