@@ -60,3 +60,26 @@ test('double-tap zoom is off everywhere (Safari ignores user-scalable=no)', asyn
   const values = await page.$$eval('*', els => [...new Set(els.map(e => getComputedStyle(e).touchAction))]);
   expect(values.every(v => v === 'manipulation' || v === 'none')).toBe(true);
 });
+
+test('a quick double-tap still gives the game both taps, but cancels the second (no Safari zoom)', async ({ page }) => {
+  await page.evaluate(() => {
+    const b = document.createElement('button');
+    b.style.cssText = 'position:fixed;left:100px;top:300px;width:80px;height:80px;z-index:999';
+    window.clicks = 0;
+    window.cancelled = [];
+    b.addEventListener('click', () => clicks++);
+    document.addEventListener('touchend', e => cancelled.push(e.defaultPrevented));
+    document.body.appendChild(b);
+  });
+  await page.touchscreen.tap(140, 340);
+  await page.touchscreen.tap(140, 340);
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => cancelled)).toEqual([false, true]);
+  expect(await page.evaluate(() => clicks)).toBe(2);
+
+  // A slow second tap is an ordinary tap: nothing cancelled
+  await page.waitForTimeout(500);
+  await page.touchscreen.tap(140, 340);
+  expect(await page.evaluate(() => cancelled)).toEqual([false, true, false]);
+  expect(await page.evaluate(() => clicks)).toBe(3);
+});

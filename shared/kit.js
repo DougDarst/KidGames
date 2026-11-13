@@ -1,17 +1,40 @@
 /* Shared helpers for Ellie's Games.
    Load just before a game's own <script>, at the end of <body>:
-   <script src="shared/kit.js?v=2"></script>
+   <script src="shared/kit.js?v=3"></script>
    Bump ?v= in every game when this file changes (see CLAUDE.md).
 
    On load it blocks pinch/double-tap zoom, fills #stars (if present), and
    sets the tab icon to a 🎮.
    Then the game can use: Kit.shuffle, Kit.confetti, Kit.audio, Kit.tone. */
 (function () {
-    /* Prevent pinch-zoom and double-tap-zoom on iOS */
+    /* Prevent pinch-zoom on iOS */
     document.addEventListener('gesturestart', e => e.preventDefault());
     document.addEventListener('gesturechange', e => e.preventDefault());
     document.addEventListener('gestureend', e => e.preventDefault());
     document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+    /* Safari zooms on a quick double-tap and doesn't always honor touch-action (kit.css),
+       so cancel the second tap of a double-tap and replay it as a plain click: no zoom,
+       and the game still gets both taps. Drags and multi-finger touches are left alone. */
+    let tapStart = null;
+    let lastTap = { time: -1e9, x: 0, y: 0 };
+    document.addEventListener('touchstart', e => {
+        tapStart = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+        const t = e.changedTouches[0];
+        if (!tapStart || e.touches.length || !t) return;
+        if (Math.hypot(t.clientX - tapStart.x, t.clientY - tapStart.y) > 10) return;   // a drag, not a tap
+        const quick = e.timeStamp - lastTap.time < 350 &&
+            Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < 40;
+        lastTap = { time: e.timeStamp, x: t.clientX, y: t.clientY };
+        if (!quick || !e.cancelable) return;
+        e.preventDefault();
+        e.target.dispatchEvent(new MouseEvent('click', {
+            bubbles: true, cancelable: true, view: window,
+            clientX: t.clientX, clientY: t.clientY, screenX: t.screenX, screenY: t.screenY,
+        }));
+    }, { passive: false });
 
     /* ── Stars ── */
     const starsEl = document.getElementById('stars');
