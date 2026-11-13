@@ -198,6 +198,14 @@ test.describe('hangman.html', () => {
     await expect(page.locator('#rTitle')).toHaveText('You did it!');
     expect(errors).toEqual([]);
   });
+  test('the picture hint stays hidden until asked for, and hides again next word', async ({ page }) => {
+    await page.evaluate(() => startRound({ word: 'CAT', emoji: '🐱' }));
+    await expect(page.locator('#hint')).toHaveText('💡 Hint');
+    await page.locator('#hint').click();
+    await expect(page.locator('#hint')).toHaveText('🐱');
+    await page.locator('.new-game-btn').click();
+    await expect(page.locator('#hint')).toHaveText('💡 Hint');
+  });
 });
 
 test.describe('snowman.html', () => {

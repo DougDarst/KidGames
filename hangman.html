@@ -132,7 +132,31 @@
         }
         .status.good { background: rgba(52,211,153,0.2);  border-color: rgba(52,211,153,0.5); }
         .status.bad  { background: rgba(244,63,94,0.18); border-color: rgba(244,63,94,0.45); }
-        .hint { font-size: 2rem; line-height: 1; }
+        /* Hint starts as a "💡 Hint" button; tapping it shows the picture */
+        .hint {
+            flex-shrink: 0;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: white;
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.45);
+            border-radius: 50px;
+            padding: 6px 12px;
+            cursor: pointer;
+            touch-action: none;
+            white-space: nowrap;
+        }
+        .hint:active { transform: scale(0.92); }
+        .hint.shown {
+            font-size: 2rem;
+            line-height: 1;
+            background: none;
+            border-color: transparent;
+            padding: 0;
+            pointer-events: none;
+            animation: partIn 0.4s cubic-bezier(0.34, 1.6, 0.64, 1);
+        }
 
         /* ── Word tiles ── */
         .word {
@@ -193,7 +217,7 @@
             .drawing svg  { height: 128px; }
             .stat-value   { font-size: 1.5rem; }
             .status       { min-height: 44px; padding: 4px 16px; }
-            .hint         { font-size: 1.6rem; }
+            .hint.shown   { font-size: 1.6rem; }
             .word, .tile  { min-height: 50px; height: 50px; }
             .tile         { font-size: 2rem; }
             .key          { height: 40px; }
@@ -264,7 +288,7 @@
 
     <!-- Hint + status -->
     <div class="status" id="status">
-        <span class="hint" id="hint"></span>
+        <button class="hint" id="hint" onclick="showHint()">💡 Hint</button>
         <span id="msg">Guess the letters!</span>
     </div>
 
@@ -328,7 +352,9 @@
         document.getElementById('confetti').innerHTML = '';
         document.getElementById('figure').classList.remove('sad');
         PARTS.forEach(id => document.getElementById(id).classList.remove('on'));
-        document.getElementById('hint').textContent = target.emoji;
+        const hint = document.getElementById('hint');
+        hint.textContent = '💡 Hint';
+        hint.classList.remove('shown');
 
         const keysEl = document.getElementById('keys');
         keysEl.innerHTML = '';
@@ -372,6 +398,13 @@
             if (misses === PARTS.length) return lose();
             setStatus(`No ${letter} — try again!`, 'bad');
         }
+    }
+
+    function showHint() {
+        const hint = document.getElementById('hint');
+        hint.textContent = target.emoji;
+        hint.classList.add('shown');
+        Kit.tone(880, 0.15);
     }
 
     function isWon() {
