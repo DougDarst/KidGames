@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔤 Hangman — Ellie & Grandpa</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
+    <style>
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Rounded, sans-serif;
+            background: linear-gradient(135deg, #1a0040, #0a1560, #2d0060, #0a1560, #1a0040);
+            background-size: 400% 400%;
+            animation: bgShift 12s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 14px 20px;
+            overflow-x: hidden;
+            color: white;
+        }
+
+        /* ── Layout ── */
+        .game {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ── Top bar: back + title ── */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 {
+            flex: 1;
+            text-align: center;
+            font-size: 1.45rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255,200,80,0.8);
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* ── Drawing + stats row ── */
+        .play-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .drawing {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border: 2px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+        }
+        .drawing svg { width: 100%; height: 170px; overflow: visible; }
+
+        .gallows { stroke: #b98bff; stroke-width: 6; stroke-linecap: round; fill: none; }
+        .figure  { stroke: white; stroke-width: 5; stroke-linecap: round; fill: none; }
+        .figure .face { stroke-width: 3; }
+        .figure .dot  { fill: white; stroke: none; }
+
+        .part { opacity: 0; transform-box: fill-box; transform-origin: center; }
+        .part.on {
+            opacity: 1;
+            animation: partIn 0.4s cubic-bezier(0.34, 1.6, 0.64, 1);
+        }
+        @keyframes partIn { from { transform: scale(0); } }
+
+        .figure.sad {
+            transform-box: view-box;
+            transform-origin: 140px 15px;
+            animation: sway 1.4s ease-in-out infinite;
+        }
+        @keyframes sway {
+            0%, 100% { transform: rotate(-5deg); }
+            50%      { transform: rotate(5deg); }
+        }
+
+        .side {
+            width: 108px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .stat-card {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-value { font-size: 1.9rem; font-weight: 900; color: #ffd700;
+                      text-shadow: 0 0 10px rgba(255,215,0,0.55); line-height: 1.1; }
+        .stat-label { font-size: 0.62rem; color: rgba(255,255,255,0.4);
+                      letter-spacing: 2px; text-transform: uppercase; }
+
+        /* ── Hint / status pill ── */
+        .status {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 50px;
+            padding: 6px 20px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+        .status.good { background: rgba(52,211,153,0.2);  border-color: rgba(52,211,153,0.5); }
+        .status.bad  { background: rgba(244,63,94,0.18); border-color: rgba(244,63,94,0.45); }
+        .hint { font-size: 2rem; line-height: 1; }
+
+        /* ── Word tiles ── */
+        .word {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            min-height: 62px;
+        }
+        .tile {
+            width: 50px;
+            height: 62px;
+            border-bottom: 4px solid rgba(255,255,255,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.3rem;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 12px rgba(255,215,0,0.5);
+        }
+        .tile span { animation: partIn 0.35s cubic-bezier(0.34, 1.6, 0.64, 1); }
+        .tile.missed { color: #ff8fab; text-shadow: none; }
+        .tile.dance { animation: hop 0.5s ease var(--d) 3; }
+        @keyframes hop {
+            50% { transform: translateY(-18px) scale(1.15); }
+        }
+
+        /* ── Letter keys ── */
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            width: 100%;
+        }
+        .key {
+            height: 46px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.22);
+            background: rgba(255,255,255,0.12);
+            color: white;
+            font-family: inherit;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            touch-action: none;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .key:nth-child(22) { grid-column-start: 2; }  /* center the last row (V–Z) */
+        .key:active { transform: scale(0.9); }
+        .key.hit  { background: rgba(52,211,153,0.35); border-color: #34d399; pointer-events: none; }
+        .key.miss { background: rgba(244,63,94,0.12); border-color: rgba(244,63,94,0.35);
+                    color: rgba(255,255,255,0.3); pointer-events: none; }
+
+        /* ── Short phones (iPhone SE): squeeze so everything fits without scrolling ── */
+        @media (max-height: 700px) {
+            body          { padding-top: 10px; padding-bottom: 10px; }
+            .game         { gap: 8px; }
+            .drawing svg  { height: 128px; }
+            .stat-value   { font-size: 1.5rem; }
+            .status       { min-height: 44px; padding: 4px 16px; }
+            .hint         { font-size: 1.6rem; }
+            .word, .tile  { min-height: 50px; height: 50px; }
+            .tile         { font-size: 2rem; }
+            .key          { height: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="confetti-wrap" id="confetti"></div>
+
+<!-- Result overlay -->
+<div class="overlay" id="overlay">
+    <div class="result-card">
+        <span class="result-big-emoji" id="rEmoji">🏆</span>
+        <div class="result-title"  id="rTitle">You did it!</div>
+        <div class="result-scores" id="rScores"></div>
+        <div class="result-msg"    id="rMsg"></div>
+        <button class="play-again-btn" onclick="newGame()">Play Again! 🎮</button>
+    </div>
+</div>
+
+<div class="game">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+        <a class="back-btn" href="index.html">← Games</a>
+        <h1>🔤 Hangman</h1>
+        <div class="top-spacer"></div>
+    </div>
+
+    <!-- Drawing + stats -->
+    <div class="play-row">
+        <div class="drawing">
+            <svg viewBox="0 0 200 200" aria-label="Hangman drawing">
+                <g class="gallows">
+                    <line x1="20"  y1="192" x2="120" y2="192"/>
+                    <line x1="50"  y1="192" x2="50"  y2="15"/>
+                    <line x1="50"  y1="15"  x2="140" y2="15"/>
+                    <line x1="140" y1="15"  x2="140" y2="35"/>
+                </g>
+                <!-- Parts appear in PARTS order, one per wrong guess -->
+                <g class="figure" id="figure">
+                    <circle class="part" id="head" cx="140" cy="57" r="22"/>
+                    <line   class="part" id="body" x1="140" y1="79"  x2="140" y2="135"/>
+                    <line   class="part" id="leg1" x1="140" y1="135" x2="118" y2="175"/>
+                    <line   class="part" id="leg2" x1="140" y1="135" x2="162" y2="175"/>
+                    <line   class="part" id="arm"  x1="140" y1="95"  x2="114" y2="120"/>
+                    <circle class="part dot" id="eye1" cx="132" cy="51" r="3"/>
+                    <circle class="part dot" id="eye2" cx="148" cy="51" r="3"/>
+                    <line   class="part face" id="nose" x1="140" y1="55" x2="140" y2="61"/>
+                    <path   class="part face" id="frown" d="M131 70 Q140 62 149 70"/>
+                </g>
+            </svg>
+        </div>
+        <div class="side">
+            <div class="stat-card">
+                <div class="stat-value" id="wins">0</div>
+                <div class="stat-label">wins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="triesLeft">9</div>
+                <div class="stat-label">tries left</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hint + status -->
+    <div class="status" id="status">
+        <span class="hint" id="hint"></span>
+        <span id="msg">Guess the letters!</span>
+    </div>
+
+    <!-- Word -->
+    <div class="word" id="word"></div>
+
+    <!-- Letter keys -->
+    <div class="keys" id="keys"></div>
+
+    <!-- New game -->
+    <button class="new-game-btn" onclick="newGame()">🔄 New Word</button>
+
+</div>
+
+<script src="shared/kit.js?v=1"></script>
+<script>
+    /* ── Constants ── */
+    // Short words a five-year-old knows, each with a picture hint.
+    const WORDS = [
+        { word: 'CAT',   emoji: '🐱' }, { word: 'DOG',   emoji: '🐶' },
+        { word: 'PIG',   emoji: '🐷' }, { word: 'COW',   emoji: '🐮' },
+        { word: 'FOX',   emoji: '🦊' }, { word: 'BEE',   emoji: '🐝' },
+        { word: 'OWL',   emoji: '🦉' }, { word: 'SUN',   emoji: '☀️' },
+        { word: 'BUS',   emoji: '🚌' }, { word: 'CAR',   emoji: '🚗' },
+        { word: 'HAT',   emoji: '🎩' }, { word: 'EGG',   emoji: '🥚' },
+        { word: 'FISH',  emoji: '🐟' }, { word: 'FROG',  emoji: '🐸' },
+        { word: 'DUCK',  emoji: '🦆' }, { word: 'BEAR',  emoji: '🐻' },
+        { word: 'LION',  emoji: '🦁' }, { word: 'CAKE',  emoji: '🎂' },
+        { word: 'STAR',  emoji: '⭐' }, { word: 'MOON',  emoji: '🌙' },
+        { word: 'TREE',  emoji: '🌳' }, { word: 'BALL',  emoji: '⚽' },
+        { word: 'BOAT',  emoji: '⛵' }, { word: 'BIKE',  emoji: '🚲' },
+        { word: 'BOOK',  emoji: '📖' }, { word: 'SHOE',  emoji: '👟' },
+        { word: 'CORN',  emoji: '🌽' }, { word: 'MILK',  emoji: '🥛' },
+        { word: 'KITE',  emoji: '🪁' }, { word: 'RAIN',  emoji: '🌧️' },
+        { word: 'APPLE', emoji: '🍎' }, { word: 'HORSE', emoji: '🐴' },
+        { word: 'TRAIN', emoji: '🚂' }, { word: 'PIZZA', emoji: '🍕' },
+        { word: 'HOUSE', emoji: '🏠' }, { word: 'SHEEP', emoji: '🐑' },
+        { word: 'MOUSE', emoji: '🐭' }, { word: 'BUNNY', emoji: '🐰' },
+        { word: 'TIGER', emoji: '🐯' }, { word: 'CLOUD', emoji: '☁️' },
+    ];
+    // One part per wrong guess, in this order; the last one loses.
+    const PARTS = ['head', 'body', 'leg1', 'leg2', 'arm', 'eye1', 'eye2', 'nose', 'frown'];
+    const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+    /* ── State ── */
+    let target  = null;       // { word, emoji }
+    let guessed = new Set();
+    let misses  = 0;
+    let over    = false;
+    let wins    = 0;
+    let deck    = [];         // words not yet played this session
+
+    /* ── Build a round ── */
+    function startRound(entry) {
+        target  = entry;
+        guessed = new Set();
+        misses  = 0;
+        over    = false;
+
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('confetti').innerHTML = '';
+        document.getElementById('figure').classList.remove('sad');
+        PARTS.forEach(id => document.getElementById(id).classList.remove('on'));
+        document.getElementById('hint').textContent = target.emoji;
+
+        const keysEl = document.getElementById('keys');
+        keysEl.innerHTML = '';
+        LETTERS.forEach(letter => {
+            const k = document.createElement('button');
+            k.className = 'key';
+            k.id = 'key' + letter;
+            k.textContent = letter;
+            k.addEventListener('click', () => guess(letter));
+            keysEl.appendChild(k);
+        });
+
+        renderWord();
+        updateTries();
+        setStatus('Guess the letters!');
+    }
+
+    function nextWord() {
+        if (!deck.length) deck = Kit.shuffle(WORDS);
+        return deck.pop();
+    }
+
+    /* ── Guess a letter ── */
+    function guess(letter) {
+        if (over || guessed.has(letter)) return;
+        guessed.add(letter);
+
+        if (target.word.includes(letter)) {
+            document.getElementById('key' + letter).classList.add('hit');
+            renderWord();
+            if (isWon()) return win();
+            Kit.tone(660, 0.12);
+            setTimeout(() => Kit.tone(880, 0.15), 90);
+            setStatus(`Yes! There's ${/[AEIOU]/.test(letter) ? 'an' : 'a'} ${letter}! 🎉`, 'good');
+        } else {
+            document.getElementById('key' + letter).classList.add('miss');
+            document.getElementById(PARTS[misses]).classList.add('on');
+            misses++;
+            updateTries();
+            Kit.tone(200, 0.3, 'triangle');
+            if (misses === PARTS.length) return lose();
+            setStatus(`No ${letter} — try again!`, 'bad');
+        }
+    }
+
+    function isWon() {
+        return [...target.word].every(l => guessed.has(l));
+    }
+
+    /* ── Win / lose ── */
+    function win() {
+        over = true;
+        wins++;
+        document.getElementById('wins').textContent = wins;
+        setStatus('You got it! 🌟', 'good');
+
+        // Letters hop in a wave, a happy jingle, and two bursts of confetti.
+        document.querySelectorAll('#word .tile').forEach((t, i) => {
+            t.style.setProperty('--d', `${i * 0.08}s`);
+            t.classList.add('dance');
+        });
+        [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => Kit.tone(f, 0.2, 'sine', 0.18), i * 120));
+        Kit.confetti(100);
+        setTimeout(() => Kit.confetti(80), 700);
+
+        setTimeout(() => showResult(target.emoji, 'You did it!',
+            `${target.word} ${target.emoji}`, 'Amazing spelling! ⭐'), 1400);
+    }
+
+    function lose() {
+        over = true;
+        document.getElementById('figure').classList.add('sad');
+        renderWord(true);
+        setStatus('Oh no!', 'bad');
+        [330, 262, 196].forEach((f, i) => setTimeout(() => Kit.tone(f, 0.3, 'triangle'), i * 220));
+
+        setTimeout(() => showResult('🙈', 'Oh no!',
+            `The word was ${target.word} ${target.emoji}`, "Let's try another one! 💪"), 1500);
+    }
+
+    function showResult(emoji, title, scores, msg) {
+        document.getElementById('rEmoji').textContent  = emoji;
+        document.getElementById('rTitle').textContent  = title;
+        document.getElementById('rScores').textContent = scores;
+        document.getElementById('rMsg').textContent    = msg;
+        document.getElementById('overlay').classList.add('show');
+    }
+
+    /* ── UI helpers ── */
+    // reveal: also show the letters they didn't find (in pink) after a loss
+    function renderWord(reveal = false) {
+        document.getElementById('word').innerHTML = [...target.word].map(l => {
+            if (guessed.has(l)) return `<div class="tile"><span>${l}</span></div>`;
+            if (reveal)         return `<div class="tile missed"><span>${l}</span></div>`;
+            return '<div class="tile"></div>';
+        }).join('');
+    }
+
+    function updateTries() {
+        document.getElementById('triesLeft').textContent = PARTS.length - misses;
+    }
+
+    function setStatus(msg, mood = '') {
+        document.getElementById('msg').textContent = msg;
+        const el = document.getElementById('status');
+        el.classList.toggle('good', mood === 'good');
+        el.classList.toggle('bad',  mood === 'bad');
+    }
+
+    /* ── New game ── */
+    function newGame() {
+        startRound(nextWord());
+    }
+
+    // A real keyboard works too (handy on a laptop).
+    document.addEventListener('keydown', e => {
+        if (/^[a-z]$/i.test(e.key)) guess(e.key.toUpperCase());
+    });
+
+    /* ── Start ── */
+    newGame();
+</script>
+</body>
+</html>

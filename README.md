@@ -1,6 +1,6 @@
 # 🦄 Ellie's Games
 
-**26 touch-friendly little games, made for Ellie and Grandpa to play together on a phone.**
+**27 touch-friendly little games, made for Ellie and Grandpa to play together on a phone.**
 
 Memory matching, tic-tac-toe, finger painting, Plinko, washing a muddy puppy, and more, each with big buttons, bright colors and plenty of confetti.
 
@@ -65,6 +65,7 @@ Memory matching, tic-tac-toe, finger painting, Plinko, washing a muddy puppy, an
 | 🏹 | **Rainbow Archery!** | Pull back and hit the moving target |
 | 🍬 | **Candy Rescue!** | Shoot candy to rescue the animals, wave after wave |
 | 🌈 | **Rainbow Brick Burst!** | Bounce the ball and pop every brick |
+| 🔤 | **Hangman!** | Guess the letters of a picture word before the drawing is done |
 
 ## 🛠️ How it's made
 

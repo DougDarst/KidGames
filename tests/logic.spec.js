@@ -144,3 +144,58 @@ test.describe('matching.html', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('hangman.html', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+    await page.goto(gameUrl('hangman.html'));
+  });
+
+  test('word list is short, unique, uppercase words with a hint', async ({ page }) => {
+    const words = await page.evaluate(() => WORDS);
+    expect(new Set(words.map(w => w.word)).size).toBe(words.length);
+    for (const w of words) {
+      expect(w.word).toMatch(/^[A-Z]{3,5}$/);
+      expect(w.emoji).toBeTruthy();
+    }
+  });
+
+  test('each wrong guess adds the next part, and the ninth loses', async ({ page }) => {
+    const errors = trackErrors(page);
+    expect(await page.evaluate(() => PARTS)).toEqual(
+      ['head', 'body', 'leg1', 'leg2', 'arm', 'eye1', 'eye2', 'nose', 'frown']);
+    await page.evaluate(() => startRound({ word: 'CAT', emoji: '🐱' }));
+
+    const wrong = 'BDEFGHIJK';
+    for (let i = 0; i < wrong.length; i++) {
+      await page.locator(`#key${wrong[i]}`).click();
+      const shown = await page.$$eval('#figure .part.on', els => els.map(e => e.id));
+      expect(shown).toEqual(await page.evaluate(n => PARTS.slice(0, n), i + 1));
+      expect(await page.evaluate(() => over)).toBe(i === wrong.length - 1);
+    }
+    await expect(page.locator('#triesLeft')).toHaveText('0');
+    await page.clock.runFor(2000);
+    await expect(page.locator('#overlay')).toHaveClass(/show/);
+    await expect(page.locator('#rScores')).toContainText('CAT');
+    expect(errors).toEqual([]);
+  });
+
+  test('a letter fills every spot, repeats are free, and spelling the word wins', async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.evaluate(() => startRound({ word: 'BEE', emoji: '🐝' }));
+    await page.locator('#keyE').click();
+    await expect(page.locator('#word .tile span')).toHaveText(['E', 'E']);
+
+    await page.evaluate(() => { guess('Z'); guess('Z'); });
+    expect(await page.evaluate(() => misses)).toBe(1);
+
+    await page.locator('#keyB').click();
+    expect(await page.evaluate(() => over)).toBe(true);
+    await expect(page.locator('#wins')).toHaveText('1');
+    await expect(page.locator('#confetti .cp').first()).toBeAttached();
+    await page.clock.runFor(2000);
+    await expect(page.locator('#overlay')).toHaveClass(/show/);
+    await expect(page.locator('#rTitle')).toHaveText('You did it!');
+    expect(errors).toEqual([]);
+  });
+});
