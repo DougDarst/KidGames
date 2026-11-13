@@ -54,3 +54,9 @@ test('every page gets the game controller tab icon', async ({ page }) => {
     expect(decodeURIComponent(href)).toContain('>🎮</text>');
   }
 });
+
+test('double-tap zoom is off everywhere (Safari ignores user-scalable=no)', async ({ page }) => {
+  // manipulation everywhere, except where a game asked for none (stricter, also no zoom)
+  const values = await page.$$eval('*', els => [...new Set(els.map(e => getComputedStyle(e).touchAction))]);
+  expect(values.every(v => v === 'manipulation' || v === 'none')).toBe(true);
+});

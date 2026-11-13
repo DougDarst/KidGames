@@ -8,6 +8,9 @@
     padding: 0;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
+    /* Safari on iPhone zooms on a double-tap even with user-scalable=no; this turns
+       that off and keeps taps fast. A game's own touch-action (e.g. none) still wins. */
+    touch-action: manipulation;
 }
 
 @keyframes bgShift {
