@@ -31,3 +31,14 @@ for (const file of linkedGames()) {
     expect(errors).toEqual([]);
   });
 }
+
+// Nothing should stick out past the right edge of the screen (WebKit lays out
+// some things wider than Chromium does, so this matters most on the iPhone run).
+for (const file of ['index.html', ...linkedGames()]) {
+  test(`${file} fits the screen width`, async ({ page }) => {
+    await page.goto(gameUrl(file));
+    await page.waitForTimeout(300);
+    const [scrollW, viewW] = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+    expect(scrollW).toBeLessThanOrEqual(viewW);
+  });
+}

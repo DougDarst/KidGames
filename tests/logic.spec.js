@@ -372,10 +372,14 @@ test.describe('christmastree.html', () => {
     expect(errors).toEqual([]);
   });
 
-  test('every tab fills the tray', async ({ page }) => {
+  test('every tab fills the tray, and every item fits inside it', async ({ page }) => {
     for (const [i, n] of [[0, 12], [1, 6], [2, 6], [3, 5]]) {
       await page.locator('.tab').nth(i).click();
       await expect(page.locator('.tray-item')).toHaveCount(n);
+      const tray = await page.locator('#tray').boundingBox();
+      for (const box of await page.$$eval('.tray-item', els => els.map(e => e.getBoundingClientRect().toJSON()))) {
+        expect(box.right).toBeLessThanOrEqual(tray.x + tray.width);
+      }
     }
   });
 });
