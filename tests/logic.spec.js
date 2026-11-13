@@ -199,3 +199,58 @@ test.describe('hangman.html', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('snowman.html', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+    await page.goto(gameUrl('snowman.html'));
+  });
+
+  test('middle ball, then head, then the extras in any order; smile only at the end', async ({ page }) => {
+    const errors = trackErrors(page);
+    const tray = () => page.$$eval('#tray .piece', els => els.map(e => e.dataset.id));
+    expect(await tray()).toEqual(['middle']);
+    expect(await page.evaluate(() => [place('head'), place('hat')])).toEqual([false, false]);
+
+    expect(await page.evaluate(() => place('middle'))).toBe(true);
+    expect(await tray()).toEqual(['head']);
+    expect(await page.evaluate(() => place('head'))).toBe(true);
+    expect((await tray()).sort()).toEqual(['armL', 'armR', 'eyes', 'hat', 'nose']);
+
+    for (const id of ['armR', 'nose', 'hat', 'eyes']) {
+      expect(await page.evaluate(id => place(id), id)).toBe(true);
+      await expect(page.locator('#p-smile')).not.toHaveClass(/on/);
+    }
+    expect(await page.evaluate(() => place('armL'))).toBe(true);
+    await expect(page.locator('#p-smile')).toHaveClass(/on/);
+    await expect(page.locator('#confetti .cp').first()).toBeAttached();
+    await page.clock.runFor(3500);
+    await expect(page.locator('#overlay')).toHaveClass(/show/);
+
+    await page.locator('.play-again-btn').click();
+    expect(await tray()).toEqual(['middle']);
+    await expect(page.locator('#p-smile')).not.toHaveClass(/on/);
+    expect(errors).toEqual([]);
+  });
+
+  test('dropping a piece in the scene snaps it; dropping outside sends it back', async ({ page }) => {
+    const piece = page.locator('#tray .piece').first();
+    const p = await piece.boundingBox();
+    const s = await page.locator('#scene').boundingBox();
+    const drag = async (x, y) => {
+      await page.mouse.move(p.x + p.width / 2, p.y + p.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, y, { steps: 5 });
+      await page.mouse.up();
+      await page.clock.runFor(400);
+    };
+
+    await drag(p.x + p.width / 2, 5);   // up by the title, outside the scene
+    expect(await page.evaluate(() => placed.has('middle'))).toBe(false);
+    await expect(piece).not.toHaveClass(/lifted/);
+
+    await drag(s.x + s.width * 0.8, s.y + s.height * 0.3);   // anywhere in the scene
+    expect(await page.evaluate(() => placed.has('middle'))).toBe(true);
+    await expect(page.locator('#p-middle')).toHaveClass(/on/);
+  });
+});

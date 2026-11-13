@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⛄ Build a Snowman — Ellie & Grandpa</title>
+    <link rel="stylesheet" href="shared/kit.css?v=1">
+    <style>
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Rounded, sans-serif;
+            background: linear-gradient(135deg, #1a0040, #0a1560, #2d0060, #0a1560, #1a0040);
+            background-size: 400% 400%;
+            animation: bgShift 12s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 14px 20px;
+            overflow-x: hidden;
+            color: white;
+            touch-action: none;
+        }
+
+        /* ── Layout ── */
+        .game {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ── Top bar: back + title ── */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 {
+            flex: 1;
+            text-align: center;
+            font-size: 1.45rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255,200,80,0.8);
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* ── Status pill ── */
+        .status {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-align: center;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── Winter scene ── */
+        .scene {
+            position: relative;
+            width: 100%;
+            height: clamp(260px, calc(100dvh - 330px), 470px);
+            border-radius: 24px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0d1b4a 0%, #1f3a75 65%, #3b5d99 100%);
+            border: 2px solid rgba(255,255,255,0.15);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+        }
+        .ground {
+            position: absolute;
+            left: -10%;
+            right: -10%;
+            bottom: -40px;
+            height: 38%;
+            background: linear-gradient(180deg, #ffffff, #dbe9f8);
+            border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+        }
+        .scenery { position: absolute; line-height: 1; pointer-events: none; }
+        .moon    { top: 6%;  right: 8%; font-size: 2.2rem; }
+        .tree1   { bottom: 20%; left: 3%;  font-size: 3.4rem; }
+        .tree2   { bottom: 25%; left: 18%; font-size: 2.2rem; }
+        .tree3   { bottom: 21%; right: 4%; font-size: 3rem; }
+
+        .flakes { position: absolute; inset: 0; pointer-events: none; }
+        .flake {
+            position: absolute;
+            top: -10px;
+            border-radius: 50%;
+            background: white;
+            opacity: 0.85;
+            animation: snowfall var(--t) linear var(--delay) infinite;
+        }
+        @keyframes snowfall {
+            to { transform: translate(var(--drift), 520px); }
+        }
+
+        .snowman-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+        /* Snowman parts (from PARTS): hidden, a pulsing hint for the next step, or placed */
+        .ball  { fill: url(#snowGrad); stroke: #b8cfe8; stroke-width: 3; }
+        .coal  { fill: #2b2b38; }
+        .stick { fill: none; stroke: #7a4a24; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+
+        .part { opacity: 0; }
+        .part.ghost { animation: ghost 1.4s ease-in-out infinite; }
+        @keyframes ghost {
+            0%, 100% { opacity: 0.12; }
+            50%      { opacity: 0.4; }
+        }
+        .part.on {
+            opacity: 1;
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: partIn 0.45s cubic-bezier(0.34, 1.6, 0.64, 1);
+        }
+        @keyframes partIn { from { transform: scale(0.6); } }
+
+        #p-smile.on circle { animation: partIn 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) backwards; transform-box: fill-box; transform-origin: center; }
+        #p-smile.on circle:nth-child(2) { animation-delay: 0.12s; }
+        #p-smile.on circle:nth-child(3) { animation-delay: 0.24s; }
+        #p-smile.on circle:nth-child(4) { animation-delay: 0.36s; }
+        #p-smile.on circle:nth-child(5) { animation-delay: 0.48s; }
+
+        /* Finished: bounce, wave both arms, tip the hat */
+        #snowman.happy {
+            transform-box: view-box;
+            transform-origin: 150px 370px;
+            animation: hop 0.6s ease-in-out 0.5s 4;
+        }
+        @keyframes hop {
+            50% { transform: translateY(-14px) scaleY(1.03); }
+        }
+        #snowman.happy #p-armL {
+            transform-box: view-box; transform-origin: 100px 186px;
+            animation: waveL 0.4s ease-in-out 8 alternate;
+        }
+        #snowman.happy #p-armR {
+            transform-box: view-box; transform-origin: 200px 186px;
+            animation: waveR 0.4s ease-in-out 8 alternate;
+        }
+        @keyframes waveL { to { transform: rotate(18deg); } }
+        @keyframes waveR { to { transform: rotate(-18deg); } }
+        #snowman.happy #p-hat {
+            transform-box: view-box; transform-origin: 150px 86px;
+            animation: hatTip 0.7s ease-in-out 0.8s 2;
+        }
+        @keyframes hatTip {
+            50% { transform: translateY(-16px) rotate(-12deg); }
+        }
+
+        /* ── Tray of pieces to drag ── */
+        .tray {
+            width: 100%;
+            min-height: 92px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+        .piece {
+            flex: 0 1 62px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            animation: bob 1.6s ease-in-out infinite;
+        }
+        .tray.solo .piece { flex-basis: 78px; }
+        .piece:nth-child(2) { animation-delay: 0.2s; }
+        .piece:nth-child(3) { animation-delay: 0.4s; }
+        .piece:nth-child(4) { animation-delay: 0.6s; }
+        .piece:nth-child(5) { animation-delay: 0.8s; }
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-5px); }
+        }
+        .piece svg, .drag-clone svg { width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+        .piece.lifted { opacity: 0.2; animation: none; pointer-events: none; }
+        .piece.lifted svg { visibility: hidden; }
+
+        .drag-clone {
+            position: fixed;
+            z-index: 300;
+            pointer-events: none;
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.4));
+        }
+        .drag-clone.flying { transition: left 0.28s ease, top 0.28s ease, width 0.28s ease, height 0.28s ease; }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="confetti-wrap" id="confetti"></div>
+
+<!-- Result overlay -->
+<div class="overlay" id="overlay">
+    <div class="result-card">
+        <span class="result-big-emoji" id="rEmoji">☃️</span>
+        <div class="result-title"  id="rTitle">You built a snowman!</div>
+        <div class="result-scores" id="rScores"></div>
+        <div class="result-msg"    id="rMsg">He loves his new hat! 🎩</div>
+        <button class="play-again-btn" onclick="newGame()">Play Again! 🎮</button>
+    </div>
+</div>
+
+<div class="game">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+        <a class="back-btn" href="index.html">← Games</a>
+        <h1>⛄ Snowman!</h1>
+        <div class="top-spacer"></div>
+    </div>
+
+    <!-- Status -->
+    <div class="status" id="status">⛄ Let's build a snowman!</div>
+
+    <!-- Winter scene -->
+    <div class="scene" id="scene">
+        <div class="flakes" id="flakes"></div>
+        <div class="scenery moon">🌙</div>
+        <div class="ground"></div>
+        <div class="scenery tree1">🌲</div>
+        <div class="scenery tree2">🌲</div>
+        <div class="scenery tree3">🌲</div>
+        <svg class="snowman-svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMax meet" aria-label="Snowman">
+            <defs>
+                <radialGradient id="snowGrad" cx="0.38" cy="0.32" r="0.75">
+                    <stop offset="0"    stop-color="#ffffff"/>
+                    <stop offset="0.65" stop-color="#eef4fc"/>
+                    <stop offset="1"    stop-color="#c9dbef"/>
+                </radialGradient>
+            </defs>
+            <g id="snowman"></g>
+        </svg>
+    </div>
+
+    <!-- Pieces to drag -->
+    <div class="tray" id="tray"></div>
+
+    <!-- New game -->
+    <button class="new-game-btn" onclick="newGame()">🔄 Start Over</button>
+
+</div>
+
+<script src="shared/kit.js?v=1"></script>
+<script>
+    /* ── Constants ── */
+    // Each part's drawing, in the scene's 300×400 coordinates. The tray reuses
+    // the same drawing, cropped to the part's own bounding box.
+    const PARTS = {
+        armL:   '<path class="stick" d="M100 186 L48 148 M70 164 L64 144 M70 164 L50 170"/>',
+        armR:   '<path class="stick" d="M200 186 L252 148 M230 164 L236 144 M230 164 L250 170"/>',
+        base:   '<circle class="ball" cx="150" cy="300" r="70"/>',
+        middle: '<circle class="ball" cx="150" cy="196" r="52"/>' +
+                '<circle class="coal" cx="150" cy="176" r="5"/><circle class="coal" cx="150" cy="196" r="5"/><circle class="coal" cx="150" cy="216" r="5"/>',
+        head:   '<circle class="ball" cx="150" cy="116" r="38"/>',
+        eyes:   '<circle class="coal" cx="137" cy="107" r="5.5"/><circle class="coal" cx="163" cy="107" r="5.5"/>',
+        nose:   '<polygon points="150,116 186,124 150,131" fill="#ff8c1a" stroke="#e06b00" stroke-width="2" stroke-linejoin="round"/>',
+        smile:  '<circle class="coal" cx="135" cy="134" r="3"/><circle class="coal" cx="141.5" cy="140" r="3"/><circle class="coal" cx="150" cy="142.5" r="3"/>' +
+                '<circle class="coal" cx="158.5" cy="140" r="3"/><circle class="coal" cx="165" cy="134" r="3"/>',
+        hat:    '<rect x="124" y="38" width="52" height="46" rx="4" fill="#26263a"/>' +
+                '<rect x="124" y="68" width="52" height="9" fill="#e53950"/>' +
+                '<rect x="110" y="80" width="80" height="10" rx="5" fill="#26263a"/>',
+    };
+    const LAYERS = ['armL', 'armR', 'base', 'middle', 'head', 'eyes', 'nose', 'smile', 'hat'];  // back to front
+    // Pieces the player places, in order: the middle ball, then the head, then the rest in any order.
+    const STEPS = [['middle'], ['head'], ['hat', 'eyes', 'nose', 'armL', 'armR']];
+    const MESSAGES = [
+        '⬆️ Put the middle snowball on top!',
+        '⬆️ Now put on the head!',
+        '🎩 Now dress him up!',
+    ];
+    const NOTES = [523, 587, 659, 698, 784, 880, 988];
+
+    /* ── State ── */
+    let step   = 0;
+    let placed = new Set();
+    let done   = false;
+
+    const scene   = document.getElementById('scene');
+    const snowman = document.getElementById('snowman');
+    const trayEl  = document.getElementById('tray');
+
+    snowman.innerHTML = LAYERS.map(id => `<g class="part" id="p-${id}">${PARTS[id]}</g>`).join('');
+    document.getElementById('p-base').classList.add('on');
+
+    function partEl(id) { return document.getElementById('p-' + id); }
+
+    /* ── Rules ── */
+    function canPlace(id) {
+        return !done && step < STEPS.length && STEPS[step].includes(id) && !placed.has(id);
+    }
+
+    function place(id) {
+        if (!canPlace(id)) return false;
+        placed.add(id);
+        const el = partEl(id);
+        el.classList.remove('ghost');
+        el.classList.add('on');
+        Kit.tone(NOTES[placed.size - 1], 0.2, 'sine', 0.18);
+
+        if (STEPS[step].every(p => placed.has(p))) step++;
+        if (step === STEPS.length) {
+            finish();
+        } else {
+            showStep();
+        }
+        return true;
+    }
+
+    function finish() {
+        done = true;
+        renderTray();
+        partEl('smile').classList.add('on');
+        snowman.classList.add('happy');
+        setStatus('🎉 Yay! Hello, Snowman! ☃️');
+        [523, 659, 784, 1047, 784, 1047].forEach((f, i) =>
+            setTimeout(() => Kit.tone(f, 0.18, 'sine', 0.18), 400 + i * 130));
+        Kit.confetti(100);
+        setTimeout(() => Kit.confetti(80), 900);
+        setTimeout(() => document.getElementById('overlay').classList.add('show'), 3200);
+    }
+
+    /* ── UI ── */
+    function showStep() {
+        STEPS[step].forEach(id => { if (!placed.has(id)) partEl(id).classList.add('ghost'); });
+        setStatus(MESSAGES[step]);
+        renderTray();
+    }
+
+    function renderTray() {
+        const ids = done ? [] : STEPS[step].filter(id => !placed.has(id));
+        trayEl.classList.toggle('solo', ids.length === 1);
+        trayEl.innerHTML = done ? '☃️ All done!' : '';
+        ids.forEach(id => {
+            const b = partEl(id).getBBox();
+            const piece = document.createElement('div');
+            piece.className = 'piece';
+            piece.dataset.id = id;
+            piece.innerHTML = `<svg viewBox="${b.x} ${b.y} ${b.width} ${b.height}">${PARTS[id]}</svg>`;
+            piece.addEventListener('pointerdown', startDrag);
+            trayEl.appendChild(piece);
+        });
+    }
+
+    function setStatus(msg) {
+        document.getElementById('status').textContent = msg;
+    }
+
+    /* ── Dragging ── */
+    let drag = null;   // { piece, clone, dx, dy }
+
+    function startDrag(e) {
+        if (drag) return;
+        e.preventDefault();
+        const piece = e.currentTarget;
+        const r = piece.getBoundingClientRect();
+        const clone = document.createElement('div');
+        clone.className = 'drag-clone';
+        clone.innerHTML = piece.innerHTML;
+        Object.assign(clone.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+        document.body.appendChild(clone);
+        piece.classList.add('lifted');
+        drag = { piece, clone, dx: e.clientX - r.left, dy: e.clientY - r.top };
+        Kit.tone(440, 0.08);
+    }
+
+    document.addEventListener('pointermove', e => {
+        if (!drag) return;
+        drag.clone.style.left = (e.clientX - drag.dx) + 'px';
+        drag.clone.style.top  = (e.clientY - drag.dy) + 'px';
+    });
+
+    function endDrag(e) {
+        if (!drag) return;
+        const { piece, clone } = drag;
+        const id = piece.dataset.id;
+        drag = null;
+
+        // Dropping anywhere in the scene counts — it snaps into place.
+        const s = scene.getBoundingClientRect();
+        const snaps = e.type === 'pointerup' && canPlace(id) &&
+            e.clientX >= s.left && e.clientX <= s.right && e.clientY >= s.top && e.clientY <= s.bottom;
+        const target = (snaps ? partEl(id) : piece).getBoundingClientRect();
+
+        clone.classList.add('flying');
+        Object.assign(clone.style, { left: target.left + 'px', top: target.top + 'px', width: target.width + 'px', height: target.height + 'px' });
+        if (!snaps) Kit.tone(220, 0.15, 'triangle');
+        setTimeout(() => {
+            clone.remove();
+            if (snaps) place(id);
+            else piece.classList.remove('lifted');
+        }, 280);
+    }
+    document.addEventListener('pointerup', endDrag);
+    document.addEventListener('pointercancel', endDrag);
+
+    /* ── Falling snow ── */
+    const flakesEl = document.getElementById('flakes');
+    for (let i = 0; i < 28; i++) {
+        const f = document.createElement('div');
+        f.className = 'flake';
+        const sz = (Math.random() * 4 + 2).toFixed(1);
+        f.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random() * 100}%;` +
+            `--t:${(Math.random() * 5 + 6).toFixed(1)}s;--delay:-${(Math.random() * 10).toFixed(1)}s;--drift:${(Math.random() * 40 - 20).toFixed(0)}px`;
+        flakesEl.appendChild(f);
+    }
+
+    /* ── New game ── */
+    function newGame() {
+        step   = 0;
+        placed = new Set();
+        done   = false;
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('confetti').innerHTML = '';
+        snowman.classList.remove('happy');
+        LAYERS.forEach(id => { if (id !== 'base') partEl(id).classList.remove('on', 'ghost'); });
+        showStep();
+    }
+
+    /* ── Start ── */
+    newGame();
+</script>
+</body>
+</html>
